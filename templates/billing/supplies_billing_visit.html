@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Bill Supplies{% endblock %}
+{% block page_title %}Bill Supplies — {{ visit.patient.full_name }}{% endblock %}
+{% block page_subtitle %}{{ visit.patient.patient_id }} · Visit {{ visit.created_at|date:"M d, Y" }}{% endblock %}
+
+{% block content %}
+
+<form method="post" action="{% url 'supplies_bulk_payment_create' visit_pk=visit.pk %}">
+  {% csrf_token %}
+
+  <div class="card mb-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-slate-800">Unbilled Items</h3>
+      <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+        <input type="checkbox" id="select-all" class="rounded" checked>
+        Select all
+      </label>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="border-b border-slate-200">
+          <tr>
+            <th class="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-8"></th>
+            <th class="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Item</th>
+            <th class="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Administered By</th>
+            <th class="pb-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</th>
+            <th class="pb-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Price</th>
+            <th class="pb-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for item in unbilled %}
+          <tr>
+            <td class="py-3 pr-3">
+              <input type="checkbox" name="item_ids" value="{{ item.pk }}"
+                     class="item-check rounded" checked
+                     data-subtotal="{{ item.total_price }}"
+                     data-qty="{{ item.quantity }}">
+            </td>
+            <td class="py-3">
+              <div class="font-medium text-slate-800">{{ item.consumable.name }}</div>
+              <div class="text-xs text-slate-400">{{ item.consumable.get_category_display }} · {{ item.consumable.unit }}</div>
+              {% if item.notes %}<div class="text-xs text-slate-400 italic">{{ item.notes }}</div>{% endif %}
+            </td>
+            <td class="py-3 text-slate-500">
+              {% if item.administered_by %}{{ item.administered_by.get_full_name }}{% else %}—{% endif %}
+              <div class="text-xs text-slate-400">{{ item.created_at|date:"M d, H:i" }}</div>
+            </td>
+            <td class="py-3 text-right font-mono text-slate-600">{{ item.quantity }}</td>
+            <td class="py-3 text-right font-mono text-slate-600">{{ item.unit_price|floatformat:-2 }}</td>
+            <td class="py-3 text-right font-mono font-semibold text-slate-800">{{ item.total_price|floatformat:-2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Live Charge Summary -->
+  <div class="card bg-emerald-50 border-emerald-200 mb-5">
+    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">Charge Summary</p>
+    <div class="space-y-1.5 text-sm">
+      <div class="flex justify-between">
+        <span class="text-slate-600">Selected Items Total</span>
+        <span id="summary-total" class="font-mono font-medium text-slate-800">—</span>
+      </div>
+      {% if visit.patient.insurance %}
+      <div class="flex justify-between">
+        <span class="text-slate-600">Insurance covers ({{ visit.patient.insurance.name }})</span>
+        <span id="summary-insurance" class="font-mono text-blue-600">—</span>
+      </div>
+      {% endif %}
+      <div class="flex justify-between border-t border-emerald-200 pt-2 mt-1">
+        <span class="font-semibold text-slate-700">Patient Pays</span>
+        <span id="summary-patient-pays" class="font-mono font-bold text-emerald-700 text-base">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment details -->
+  <div class="card">
+    <h3 class="font-semibold text-slate-800 mb-4">Payment Details</h3>
+    {% if visit.patient.insurance %}
+    <div class="mb-4 text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+      Insurance: <strong>{{ visit.patient.insurance.name }}</strong> — covers {{ visit.patient.insurance.coverage_percentage }}%
+    </div>
+    {% endif %}
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Payment Method</label>
+        <select name="payment_method" class="form-input">
+          {% for val, label in payment_methods %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Amount Received ({{ currency }})</label>
+        <input name="amount_paid" id="amount-paid" type="number" step="0.01" min="0" class="form-input" placeholder="Auto" />
+        <p class="text-xs text-slate-400 mt-1">Auto-filled with the patient's share. Edit if actual amount differs.</p>
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="form-label">Notes</label>
+      <input name="notes" class="form-input" placeholder="Optional notes on this payment" />
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button type="submit" class="btn-primary flex-1 justify-center">Confirm Payment &amp; Print Receipt</button>
+      <a href="{% url 'supplies_billing_list' %}" class="btn-secondary justify-center px-6">Cancel</a>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const insurancePct = {{ visit.patient.insurance.coverage_percentage|default:0 }};
+  const currency     = "{{ currency }}";
+
+  const selectAll    = document.getElementById('select-all');
+  const checks       = document.querySelectorAll('.item-check');
+  const summaryTotal = document.getElementById('summary-total');
+  const summaryIns   = document.getElementById('summary-insurance');
+  const summaryPays  = document.getElementById('summary-patient-pays');
+  const amountPaid   = document.getElementById('amount-paid');
+
+  function fmt(n, c) {
+    return new Intl.NumberFormat(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}).format(n) + ' ' + c;
+  }
+
+  function recalc() {
+    let total = 0;
+    checks.forEach(c => {
+      if (c.checked) {
+        total += parseFloat(c.dataset.subtotal) || 0;
+      }
+    });
+    const pct           = (100 - insurancePct) / 100;
+    const patientPays   = total * pct;
+    const insurancePays = total - patientPays;
+
+    if (summaryTotal) summaryTotal.textContent = fmt(total, currency);
+    if (summaryIns)   summaryIns.textContent   = fmt(insurancePays, currency);
+    if (summaryPays)  summaryPays.textContent  = fmt(patientPays, currency);
+    amountPaid.value = total > 0 ? (Math.round(patientPays * 100) / 100) : '';
+  }
+
+  selectAll.addEventListener('change', () => {
+    checks.forEach(c => c.checked = selectAll.checked);
+    recalc();
+  });
+
+  checks.forEach(c => {
+    c.addEventListener('change', () => {
+      selectAll.checked = [...checks].every(c => c.checked);
+      recalc();
+    });
+  });
+
+  recalc();
+</script>
+{% endblock %}

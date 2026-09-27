@@ -1,0 +1,78 @@
+UnboundLocalError at /dashboard/
+cannot access local variable 'OuterRef' where it is not associated with a value
+Request Method:	GET
+Request URL:	http://2b39cbf3-efd5-42f1-83ee-57c2a743eb8e-00-2lg4ogmbphy5u.riker.replit.dev/dashboard/
+Django Version:	5.2.14
+Exception Type:	UnboundLocalError
+Exception Value:	
+cannot access local variable 'OuterRef' where it is not associated with a value
+Exception Location:	/home/runner/workspace/core/views.py, line 71, in dashboard
+Raised during:	core.views.dashboard
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.12.12
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages',
+ '/nix/store/3idd141l4qkq2s4b1jqwfahmzf739yyb-python3.12-pip-25.0.1/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python312.zip',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/y9isj47l7a4i7ycp7njnbgrv7c1kyziv-python3.12-setuptools-80.9.0/lib/python3.12/site-packages']
+Server time:	Sun, 24 May 2026 10:03:32 +0200
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/base.py, line 197, in _get_response
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/core/decorators.py, line 37, in wrapped
+        return view_func(request, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/core/views.py, line 71, in dashboard
+            visit=OuterRef('pk'), payment_type=PaymentType.CONSULTATION,
+                      ^^^^^^^^ …
+Local vars
+Request information
+USER
+Eric Kalisa (Doctor)
+
+GET
+No GET data
+
+POST
+No POST data
+
+FILES
+No FILES data
+
+COOKIES
+Variable	Value
+csrftoken	
+'********************'
+sessionid	
+'********************'
+META
+Variable	Value
+COLORTERM	
+'truecolor'
+CONNECTORS_HOSTNAME	
+'connectors.replit.com'
+CONTENT_LENGTH	
+''
+CONTENT_TYPE	
+'text/plain'
+CSRF_COOKIE	
+'RkzAGDEwh29EoOqqSIfMPHtaf5T1KpKr'
+DATABASE_URL	
+'postgresql://postgres:password@helium/heliumdb?sslmode=disable'
+DISPLAY	
+':0'
+DJANGO_SECRET_KEY	
+'************

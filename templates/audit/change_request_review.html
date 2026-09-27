@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Review Change Request{% endblock %}
+{% block page_title %}Review Change Request{% endblock %}
+{% block content %}
+<div class="max-w-3xl">
+<div class="card mb-4">
+  <div class="grid grid-cols-2 gap-4 mb-5 text-sm">
+    <div><span class="text-slate-500">Request Type:</span> <span class="badge {% if cr.request_type == 'delete' %}badge-red{% else %}badge-yellow{% endif %} ml-1">{{ cr.request_type|upper }}</span></div>
+    <div><span class="text-slate-500">Model:</span> <strong>{{ cr.content_type.model|capfirst }} #{{ cr.object_id }}</strong></div>
+    <div><span class="text-slate-500">Requested By:</span> <strong>{{ cr.requested_by.get_full_name }}</strong></div>
+    <div><span class="text-slate-500">Date:</span> {{ cr.requested_at|date:"M d, Y H:i" }}</div>
+  </div>
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+    <div class="text-sm font-medium text-amber-800 mb-1">Reason</div>
+    <div class="text-sm text-amber-700">{{ cr.reason }}</div>
+  </div>
+  {% if cr.before_data %}
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Before</div>
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm font-mono">
+        {% for k, v in cr.before_data.items %}<div><span class="text-red-600">{{ k }}:</span> {{ v }}</div>{% endfor %}
+      </div>
+    </div>
+    {% if cr.after_data %}
+    <div>
+      <div class="text-xs font-semibold text-slate-500 uppercase mb-2">After (proposed)</div>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm font-mono">
+        {% for k, v in cr.after_data.items %}<div><span class="text-emerald-700">{{ k }}:</span> {{ v }}</div>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<div class="card">
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div><label class="form-label">Admin Notes</label><textarea name="admin_notes" class="form-input" rows="2" placeholder="Optional notes about your decision"></textarea></div>
+    <div class="flex gap-3">
+      <button type="submit" name="action" value="approve" class="btn-success">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        Approve & Apply
+      </button>
+      <button type="submit" name="action" value="reject" class="btn-danger">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        Reject
+      </button>
+      <a href="{% url 'change_request_list' %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

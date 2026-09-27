@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Hospital Settings" %}{% endblock %}
+{% block page_title %}{% trans "Hospital Settings" %}{% endblock %}
+{% block page_subtitle %}{% trans "Configure system-wide branding, pricing and defaults" %}{% endblock %}
+{% block content %}
+<div class="max-w-2xl space-y-8">
+
+  <!-- Branding & Identity -->
+  <div class="card">
+    <h2 class="font-semibold text-slate-800 mb-5">Branding &amp; Identity</h2>
+
+    <!-- Logo removal form — must live OUTSIDE the main form (nested forms are invalid HTML) -->
+    {% if settings.logo %}
+    <form id="logo-remove-form" method="post" class="hidden">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="branding" />
+      <input type="hidden" name="remove_logo" value="1" />
+      <input type="hidden" name="hospital_name" value="{{ settings.hospital_name }}" />
+      <input type="hidden" name="logo_size" value="{{ settings.logo_size }}" />
+    </form>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="branding" />
+
+      <div>
+        <label class="form-label">Hospital Name</label>
+        <input type="text" name="hospital_name" maxlength="200"
+               value="{{ settings.hospital_name }}"
+               required class="form-input" placeholder="e.g. Shiloh Hospital" />
+        <p class="text-xs text-slate-500 mt-1.5">Shown on the login page and receipts.</p>
+      </div>
+
+      <div>
+        <label class="form-label">Hospital Logo</label>
+        {% if settings.logo %}
+        <div class="flex items-center gap-4 mb-3">
+          <img src="{{ settings.logo.url }}" alt="Current logo" class="h-20 w-20 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1" />
+          <div>
+            <p class="text-sm text-slate-600 font-medium">Current logo</p>
+            <button type="button"
+                    data-confirm-form="logo-remove-form"
+                    data-confirm-title="Remove Logo"
+                    data-confirm-message="Remove the current hospital logo? You can upload a new one anytime."
+                    data-confirm-label="Remove"
+                    class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-white bg-red-50 hover:bg-red-500 border border-red-200 hover:border-red-500 px-3 py-1.5 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Remove logo
+            </button>
+          </div>
+        </div>
+        {% endif %}
+        <input type="file" name="logo" accept="image/*"
+               class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer" />
+        <p class="text-xs text-slate-500 mt-1.5">PNG, JPG or SVG recommended. Used as favicon and on receipts &amp; login page.</p>
+      </div>
+
+      <div>
+        <label class="form-label">Logo Display Size</label>
+        <div class="flex gap-3 mt-1">
+          {% for val, label in logo_size_choices %}
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="logo_size" value="{{ val }}"
+                   {% if settings.logo_size == val %}checked{% endif %}
+                   class="accent-brand-600" />
+            <span class="text-sm text-slate-700">{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-slate-500 mt-1.5">Controls how large the logo appears on the login page and sidebar.</p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="btn-primary">Save Branding</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- General Settings -->
+  <div class="card">
+    <h2 class="font-semibold text-slate-800 mb-5">Billing Settings</h2>
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="billing" />
+
+      <div>
+        <label class="form-label">Currency</label>
+        <input type="text" name="currency" maxlength="10"
+               value="{{ settings.currency }}"
+               required class="form-input" placeholder="e.g. CDF" />
+        <p class="text-xs text-slate-500 mt-1.5">Used for all amounts across the system.</p>
+      </div>
+
+      <div>
+        <label class="form-label">Standard Consultation Fee <span class="text-xs font-normal text-slate-400">({{ settings.currency }})</span></label>
+        <input type="number" name="consultation_fee" step="0.01" min="0"
+               value="{{ settings.consultation_fee }}"
+               class="form-input" placeholder="0.00" />
+        <p class="text-xs text-slate-500 mt-1.5">Applied when no specialist fee matches the doctor's specialty. Insurance deductions are calculated per patient.</p>
+      </div>
+
+      {% if settings.consultation_fee > 0 %}
+      <div class="bg-slate-50 rounded-lg p-4 text-sm space-y-1">
+        <div class="font-semibold text-slate-700 mb-2">Current Standard Fee</div>
+        <div class="flex justify-between text-slate-600">
+          <span>No insurance (full fee)</span>
+          <span class="font-medium">{{ settings.consultation_fee|floatformat:-2 }} {{ settings.currency }}</span>
+        </div>
+        <div class="text-xs text-slate-400 mt-1">Insurance deductions are calculated per patient based on their plan's coverage percentage.</div>
+      </div>
+      {% endif %}
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="btn-primary">Save Settings</button>
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Specialist Consultation Fees -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="font-semibold text-slate-800">Specialist Consultation Fees</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Override the standard fee for specific doctor specialties.</p>
+      </div>
+    </div>
+
+    {% if specialist_fees %}
+    <div class="divide-y divide-slate-100 mb-6">
+      {% for sf in specialist_fees %}
+      <div class="py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <span class="font-medium text-slate-800 text-sm">{{ sf.get_specialty_display }}</span>
+          {% if not sf.is_active %}
+          <span class="ml-2 text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Inactive</span>
+          {% endif %}
+        </div>
+        <span class="font-mono text-sm font-semibold text-slate-700 shrink-0">{{ sf.fee|floatformat:-2 }} {{ settings.currency }}</span>
+
+        <!-- Inline edit form -->
+        <form method="post" action="{% url 'specialist_fee_edit' pk=sf.pk %}" class="flex items-center gap-2" id="edit-form-{{ sf.pk }}">
+          {% csrf_token %}
+          <div class="hidden items-center gap-1" id="fee-inputs-{{ sf.pk }}" style="display:none">
+            <input type="number" name="fee" value="{{ sf.fee }}" min="0" step="0.01"
+                   class="form-input w-24 text-sm py-1.5" placeholder="{{ settings.currency }}" />
+          </div>
+          <label class="items-center gap-1.5 text-xs text-slate-500 hidden" id="active-label-{{ sf.pk }}">
+            <input type="checkbox" name="is_active" {% if sf.is_active %}checked{% endif %} class="rounded" />
+            Active
+          </label>
+          <button type="button" onclick="toggleEdit({{ sf.pk }})"
+                  class="text-xs text-blue-600 hover:text-blue-800 underline underline-offset-2" id="edit-btn-{{ sf.pk }}">Edit</button>
+          <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800 underline underline-offset-2 hidden" id="save-btn-{{ sf.pk }}">Save</button>
+        </form>
+
+        <!-- Delete -->
+        <form id="sf-del-{{ sf.pk }}" method="post" action="{% url 'specialist_fee_delete' pk=sf.pk %}">
+          {% csrf_token %}
+        </form>
+        <button type="button" class="text-xs text-red-400 hover:text-red-600 underline underline-offset-2"
+                data-confirm-form="sf-del-{{ sf.pk }}"
+                data-confirm-title="Remove Specialist Fee"
+                data-confirm-message="Remove the specialist fee for {{ sf.get_specialty_display }}?">
+          Remove
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-400 mb-6">No specialist fees configured yet. All consultations will use the standard fee above.</p>
+    {% endif %}
+
+    {% if available_specialties %}
+    <div class="border-t border-slate-100 pt-5">
+      <h3 class="text-sm font-medium text-slate-700 mb-3">Add Specialist Fee</h3>
+      <form method="post" action="{% url 'specialist_fee_create' %}" class="flex flex-wrap gap-3 items-end">
+        {% csrf_token %}
+        <div class="flex-1 min-w-40">
+          <label class="form-label text-xs">Specialty</label>
+          <select name="specialty" required class="form-input">
+            <option value="">— Select specialty —</option>
+            {% for val, label in available_specialties %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="w-32">
+          <label class="form-label text-xs">Fee ({{ settings.currency }})</label>
+          <input type="number" name="fee" min="0" step="0.01" required
+                 class="form-input" placeholder="0.00" />
+        </div>
+        <button type="submit" class="btn-primary shrink-0">Add Fee</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="text-xs text-slate-400 border-t border-slate-100 pt-4">All available specialties already have fees configured.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% block extra_js %}
+<script>
+function toggleEdit(pk) {
+  const feeInputs   = document.getElementById('fee-inputs-' + pk);
+  const activeLabel = document.getElementById('active-label-' + pk);
+  const editBtn     = document.getElementById('edit-btn-' + pk);
+  const saveBtn     = document.getElementById('save-btn-' + pk);
+  feeInputs.style.display = 'flex';
+  activeLabel.classList.remove('hidden');
+  activeLabel.style.display = 'flex';
+  editBtn.classList.add('hidden');
+  saveBtn.classList.remove('hidden');
+  feeInputs.querySelector('input').focus();
+}
+</script>
+{% endblock %}
+{% endblock %}

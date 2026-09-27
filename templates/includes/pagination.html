@@ -1,0 +1,31 @@
+{% load i18n %}
+<div class="flex items-center justify-between pt-4 mt-2 text-sm flex-wrap gap-3">
+  <span class="text-slate-500">
+    {% if page_obj.paginator.count > 0 %}
+      Showing <span class="font-medium text-slate-700">{{ page_obj.start_index }}–{{ page_obj.end_index }}</span> of <span class="font-medium text-slate-700">{{ page_obj.paginator.count }}</span> record{{ page_obj.paginator.count|pluralize }}
+    {% else %}
+      No records found
+    {% endif %}
+  </span>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="inline-flex items-center rounded-lg border border-slate-200 divide-x divide-slate-200 overflow-hidden shadow-sm">
+    {% if page_obj.has_previous %}
+    <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-medium">← Prev</a>
+    {% else %}
+    <span class="px-3 py-1.5 text-slate-300 text-xs font-medium cursor-not-allowed">← Prev</span>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="px-3 py-1.5 bg-brand-600 text-white text-xs font-semibold">{{ num }}</span>
+      {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ num }}" class="px-3 py-1.5 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-medium">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page_obj.next_page_number }}" class="px-3 py-1.5 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-medium">Next →</a>
+    {% else %}
+    <span class="px-3 py-1.5 text-slate-300 text-xs font-medium cursor-not-allowed">Next →</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

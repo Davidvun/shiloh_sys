@@ -1,0 +1,85 @@
+TemplateSyntaxError at /dashboard/
+'block' tag with name 'content' appears more than once
+Request Method:	GET
+Request URL:	http://069470ce-3453-48c5-a270-44e44cd8b8ba-00-31qrmuv9xntc4.janeway.replit.dev/dashboard/
+Django Version:	6.0.4
+Exception Type:	TemplateSyntaxError
+Exception Value:	
+'block' tag with name 'content' appears more than once
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/loader_tags.py, line 229, in do_block
+Raised during:	core.views.dashboard
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.12.12
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages',
+ '/nix/store/3idd141l4qkq2s4b1jqwfahmzf739yyb-python3.12-pip-25.0.1/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python312.zip',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/y9isj47l7a4i7ycp7njnbgrv7c1kyziv-python3.12-setuptools-80.9.0/lib/python3.12/site-packages']
+Server time:	Sun, 19 Apr 2026 18:50:37 +0200
+Error during template rendering
+In template /home/runner/workspace/templates/base.html, error at line 202
+
+'block' tag with name 'content' appears more than once
+192	  </main>
+193	
+194	  <footer class="px-8 py-4 border-t border-slate-100 text-xs text-slate-400 flex justify-between">
+195	    <span>MediCore HMS &copy; 2025 — All rights reserved</span>
+196	    <span>Logged in as <strong>{{ user.username }}</strong> · <span class="capitalize">{{ user.get_role_display }}</span></span>
+197	  </footer>
+198	</div>
+199	
+200	{% else %}
+201	<!-- Unauthenticated layout -->
+202	<div class="flex-1">{% block content %}{% endblock %}</div>
+203	{% endif %}
+204	
+205	{% block extra_js %}{% endblock %}
+206	</body>
+207	</html>
+208	
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/exception.py, line 55, in inner
+        return inner
+    else:
+        @wraps(get_response)
+        def inner(request):
+            try:
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+            except Exception as exc:
+                response = response_for_exception(request, exc)
+            return response
+        return inner
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/base.py, line 198, in _get_response
+        if response is None:
+            wrapped_callback = self.make_view_atomic(callback)
+            # If it is an asynchronous view, run it in a subthread.
+            if iscoroutinefunction(wrapped_callback):
+                wrapped_callback = async_to_sync(wrapped_callback)
+            try:
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+            except Exception as e:
+                response = self.process_exception_by_middleware(e, request)
+                if response is None:
+                    raise
+        # Complain if the view returned None (a common error).
+Local vars
+/home/runner/workspace/core/decorators.py, line 37, in wrapped
+def login_required_custom(view_func):
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+    return wrapped
+Local vars
+/home/runner/workspa

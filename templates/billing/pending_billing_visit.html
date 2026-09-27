@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Pending Payments — {{ visit.patient.full_name }}{% endblock %}
+{% block page_title %}Pending Payments{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+  <a href="{% url 'pending_billing_list' %}" class="text-sm text-blue-600 hover:underline">&larr; Back to Pending Payments</a>
+</div>
+
+<!-- Visit Summary -->
+<div class="card mb-6">
+  <h2 class="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Visit Summary</h2>
+  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+    <div><dt class="text-slate-400 text-xs mb-0.5">Patient</dt><dd class="font-semibold text-slate-800">{{ visit.patient.full_name }}</dd></div>
+    <div><dt class="text-slate-400 text-xs mb-0.5">Patient ID</dt><dd class="font-mono text-blue-600">{{ visit.patient.patient_id }}</dd></div>
+    <div><dt class="text-slate-400 text-xs mb-0.5">Doctor</dt><dd class="text-slate-700">{% if visit.doctor %}Dr. {{ visit.doctor.get_full_name }}{% else %}—{% endif %}</dd></div>
+    <div><dt class="text-slate-400 text-xs mb-0.5">Visit Status</dt><dd><span class="badge {% if visit.status == 'pending' %}badge-yellow{% elif visit.status == 'in_progress' %}badge-blue{% else %}badge-green{% endif %}">{{ visit.get_status_display }}</span></dd></div>
+  </dl>
+</div>
+
+{# ─── PAY ALL TOGETHER ─── #}
+{% if unpaid_labs or unbilled_supplies %}
+
+<div class="card border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 mb-6" id="pay-all-card">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      </div>
+      <div>
+        <h3 class="font-bold text-blue-900 text-base">Pay Everything Together</h3>
+        <p class="text-xs text-blue-600 mt-0.5">Settle all outstanding charges in a single payment</p>
+      </div>
+    </div>
+    <button type="button" id="toggle-pay-all"
+            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      Open Pay All Form
+    </button>
+  </div>
+
+  <!-- Combined totals summary (always visible) -->
+  <div class="flex flex-wrap gap-3 mb-3">
+    {% if not paid_consultation and consultation_fee > 0 %}
+    <div class="bg-white rounded-lg px-3 py-2 text-xs border border-blue-100">
+      <span class="text-slate-500">Consultation</span>
+      <span class="ml-2 font-mono font-semibold text-slate-800">{{ consultation_fee|floatformat:-2 }} {{ currency }}</span>
+    </div>
+    {% endif %}
+    {% if unpaid_labs %}
+    <div class="bg-white rounded-lg px-3 py-2 text-xs border border-blue-100">
+      <span class="text-slate-500">Lab tests</span>
+      <span class="badge badge-yellow ml-1">{{ unpaid_labs|length }}</span>
+    </div>
+    {% endif %}
+    {% if unbilled_supplies %}
+    <div class="bg-white rounded-lg px-3 py-2 text-xs border border-blue-100">
+      <span class="text-slate-500">Supplies</span>
+      <span class="badge badge-yellow ml-1">{{ unbilled_supplies|length }}</span>
+      <span class="ml-2 font-mono font-semibold text-slate-800">{{ unbilled_supplies_total|floatformat:-2 }} {{ currency }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Expandable form -->
+  <div id="pay-all-form-wrapper" class="hidden">
+    <div class="border-t border-blue-200 pt-5">
+      <form method="post" action="{% url 'combined_payment_create' visit_pk=visit.pk %}" id="pay-all-form">
+        {% csrf_token %}
+
+        <!-- Items to include -->
+        <div class="mb-5">
+          <h4 class="text-sm font-semibold text-slate-700 mb-3">Select items to pay</h4>
+          <div class="space-y-2">
+
+            {% if not paid_consultation and consultation_fee > 0 %}
+            <label class="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-3 border border-slate-200 cursor-pointer hover:border-blue-300 transition-colors pay-all-item" data-amount="{{ consultation_fee }}">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" name="include_consultation" value="1" checked class="pay-all-check rounded text-blue-600 w-4 h-4" />
+                <div>
+                  <span class="text-sm font-medium text-slate-800">Consultation Fee</span>
+                  {% if specialist_label %}<span class="text-xs text-slate-400 ml-1">({{ specialist_label }})</span>{% endif %}
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="hidden" name="consultation_amount" value="{{ consultation_fee }}" />
+                <span class="font-mono text-sm font-semibold text-slate-700">{{ consultation_fee|floatformat:-2 }} {{ currency }}</span>
+              </div>
+            </label>
+            {% endif %}
+
+            {% for lab in unpaid_labs %}
+            <label class="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-3 border border-slate-200 cursor-pointer hover:border-blue-300 transition-colors pay-all-item" data-amount="{{ lab.lab_test.default_price|default:0 }}">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" name="lab_ids" value="{{ lab.pk }}" checked class="pay-all-check rounded text-blue-600 w-4 h-4" />
+                <div>
+                  <span class="text-sm font-medium text-slate-800">{{ lab.test_name }}</span>
+                  <span class="text-xs text-slate-400 ml-1">Lab test</span>
+                  <span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %} ml-1 text-xs">{{ lab.urgency|upper }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" name="lab_amount_{{ lab.pk }}" value="{{ lab.lab_test.default_price|default:0 }}"
+                       min="0" step="0.01" class="pay-all-price-input w-28 border border-slate-200 rounded-lg px-2 py-1 text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <span class="text-xs text-slate-400">{{ currency }}</span>
+              </div>
+            </label>
+            {% endfor %}
+
+            {% for s in unbilled_supplies %}
+            <label class="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-3 border border-slate-200 cursor-pointer hover:border-blue-300 transition-colors pay-all-item" data-amount="{{ s.total_price }}">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" name="supply_ids" value="{{ s.pk }}" checked class="pay-all-check rounded text-blue-600 w-4 h-4" />
+                <div>
+                  <span class="text-sm font-medium text-slate-800">{{ s.consumable.name }}</span>
+                  <span class="text-xs text-slate-400 ml-1">× {{ s.quantity }} {{ s.consumable.unit }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" name="supply_amount_{{ s.pk }}" value="{{ s.total_price }}"
+                       min="0" step="0.01" class="pay-all-price-input w-28 border border-slate-200 rounded-lg px-2 py-1 text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <span class="text-xs text-slate-400">{{ currency }}</span>
+              </div>
+            </label>
+            {% endfor %}
+
+          </div>
+        </div>
+
+        <!-- Live total breakdown -->
+        <div class="bg-white rounded-xl border border-blue-200 p-4 mb-5" id="pay-all-summary">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-500">Total</span>
+            <span class="font-mono font-medium text-slate-800" id="pay-all-total">0</span>
+          </div>
+          {% if visit.patient.insurance %}
+          <div class="flex justify-between text-sm mb-1 text-emerald-700">
+            <span>Insurance covers ({{ visit.patient.insurance.name }})</span>
+            <span class="font-mono" id="pay-all-insurance">0</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between font-bold text-base pt-2 border-t border-slate-200">
+            <span class="text-slate-800">Patient Pays</span>
+            <span class="font-mono text-blue-700" id="pay-all-patient">0</span>
+          </div>
+        </div>
+
+        <!-- Payment method & amount received -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Payment Method</label>
+            <select name="payment_method" required class="form-input">
+              {% for val, label in payment_methods %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount Received <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+            <input type="number" name="amount_paid" id="pay-all-amount-paid" min="0" step="0.01" class="form-input font-mono" placeholder="0.00" />
+            <p class="text-xs text-slate-400 mt-1">Auto-filled with patient share. Edit if different.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary text-base px-6 py-2.5">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Confirm Combined Payment
+          </button>
+          <button type="button" id="cancel-pay-all" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+<div class="grid grid-cols-1 gap-5">
+
+  <!-- Consultation -->
+  <div class="card border-l-4 {% if paid_consultation %}border-emerald-400{% else %}border-amber-400{% endif %}">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 {% if paid_consultation %}bg-emerald-100{% else %}bg-amber-100{% endif %} rounded-xl flex items-center justify-center">
+          <svg class="w-5 h-5 {% if paid_consultation %}text-emerald-600{% else %}text-amber-600{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Consultation Fee</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Initial visit payment for the assigned doctor</p>
+        </div>
+      </div>
+      {% if paid_consultation %}
+        <span class="badge badge-green text-sm px-3 py-1">Paid</span>
+      {% else %}
+        <a href="{% url 'payment_create' visit_pk=visit.pk %}" class="btn-primary">Record Payment</a>
+      {% endif %}
+    </div>
+    {% if paid_consultation %}
+      <p class="text-sm text-emerald-700 bg-emerald-50 rounded-lg px-4 py-2">Consultation fee has been paid.</p>
+    {% else %}
+      <p class="text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-2">No consultation payment recorded yet. Click "Record Payment" or use "Pay Everything Together" above.</p>
+    {% endif %}
+  </div>
+
+  <!-- Lab Tests -->
+  <div class="card border-l-4 {% if unpaid_labs %}border-amber-400{% else %}border-slate-200{% endif %}">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 {% if unpaid_labs %}bg-amber-100{% else %}bg-slate-100{% endif %} rounded-xl flex items-center justify-center">
+          <svg class="w-5 h-5 {% if unpaid_labs %}text-amber-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Lab Tests
+            {% if unpaid_labs %}<span class="badge badge-yellow ml-2">{{ unpaid_labs|length }} unpaid</span>{% endif %}
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Requested lab tests awaiting payment</p>
+        </div>
+      </div>
+      {% if unpaid_labs %}
+        <a href="{% url 'lab_billing_visit' visit_pk=visit.pk %}" class="btn-secondary text-sm">Bill Separately</a>
+      {% endif %}
+    </div>
+    {% if unpaid_labs %}
+    <table class="w-full text-sm mt-2">
+      <thead><tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+        <th class="pb-2 pr-4">Test Name</th>
+        <th class="pb-2 pr-4">Price</th>
+        <th class="pb-2 pr-4">Urgency</th>
+        <th class="pb-2">Requested</th>
+      </tr></thead>
+      <tbody>
+        {% for lab in unpaid_labs %}
+        <tr class="border-b border-slate-50 last:border-0">
+          <td class="py-2 pr-4 font-medium text-slate-800">{{ lab.test_name }}</td>
+          <td class="py-2 pr-4 font-mono text-slate-600">{% if lab.lab_test.default_price %}{{ lab.lab_test.default_price|floatformat:-2 }} {{ currency }}{% else %}—{% endif %}</td>
+          <td class="py-2 pr-4"><span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %}">{{ lab.urgency|upper }}</span></td>
+          <td class="py-2 text-xs text-slate-400">{{ lab.created_at|date:"M d, H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="text-sm text-slate-400 italic">No unpaid lab tests for this visit.</p>
+    {% endif %}
+  </div>
+
+  <!-- Supplies & Medication -->
+  <div class="card border-l-4 {% if unbilled_supplies %}border-amber-400{% else %}border-slate-200{% endif %}">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 {% if unbilled_supplies %}bg-amber-100{% else %}bg-slate-100{% endif %} rounded-xl flex items-center justify-center">
+          <svg class="w-5 h-5 {% if unbilled_supplies %}text-amber-600{% else %}text-slate-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Supplies &amp; Medication
+            {% if unbilled_supplies %}<span class="badge badge-yellow ml-2">{{ unbilled_supplies|length }} unbilled</span>{% endif %}
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Consumables administered but not yet billed</p>
+        </div>
+      </div>
+      {% if unbilled_supplies %}
+        <div class="flex items-center gap-4">
+          <span class="text-sm font-semibold text-slate-700">{{ unbilled_supplies_total|floatformat:-2 }} {{ currency }}</span>
+          <a href="{% url 'supplies_billing_visit' visit_pk=visit.pk %}" class="btn-secondary text-sm">Bill Separately</a>
+        </div>
+      {% endif %}
+    </div>
+    {% if unbilled_supplies %}
+    <table class="w-full text-sm mt-2">
+      <thead><tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+        <th class="pb-2 pr-4">Item</th>
+        <th class="pb-2 pr-4">Qty</th>
+        <th class="pb-2 pr-4">Unit Price</th>
+        <th class="pb-2">Total</th>
+      </tr></thead>
+      <tbody>
+        {% for s in unbilled_supplies %}
+        <tr class="border-b border-slate-50 last:border-0">
+          <td class="py-2 pr-4 font-medium text-slate-800">{{ s.consumable.name }}</td>
+          <td class="py-2 pr-4 text-slate-600">{{ s.quantity }} {{ s.consumable.unit }}</td>
+          <td class="py-2 pr-4 font-mono text-slate-600">{{ s.unit_price|floatformat:-2 }}</td>
+          <td class="py-2 font-mono font-medium text-blue-700">{{ s.total_price|floatformat:-2 }} {{ currency }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="text-sm text-slate-400 italic">No unbilled supplies for this visit.</p>
+    {% endif %}
+  </div>
+
+  {% if other_pending %}
+  <!-- Other Pending Payments -->
+  <div class="card border-l-4 border-blue-400">
+    <h3 class="font-semibold text-slate-800 mb-3">Other Pending Payments</h3>
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+        <th class="pb-2 pr-4">Receipt</th>
+        <th class="pb-2 pr-4">Type</th>
+        <th class="pb-2 pr-4">Amount</th>
+        <th class="pb-2">Date</th>
+      </tr></thead>
+      <tbody>
+        {% for p in other_pending %}
+        <tr class="border-b border-slate-50 last:border-0">
+          <td class="py-2 pr-4 font-mono text-xs text-blue-600">{{ p.receipt_number }}</td>
+          <td class="py-2 pr-4 text-slate-600">{{ p.get_payment_type_display }}</td>
+          <td class="py-2 pr-4 font-mono font-medium text-blue-700">{{ p.patient_pays|floatformat:-2 }} {{ currency }}</td>
+          <td class="py-2 text-xs text-slate-400">{{ p.created_at|date:"M d, H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const toggleBtn   = document.getElementById('toggle-pay-all');
+  const cancelBtn   = document.getElementById('cancel-pay-all');
+  const formWrapper = document.getElementById('pay-all-form-wrapper');
+  const card        = document.getElementById('pay-all-card');
+
+  if (!toggleBtn) return;
+
+  function openForm() {
+    formWrapper.classList.remove('hidden');
+    toggleBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg> Close';
+    toggleBtn.classList.replace('bg-blue-600', 'bg-slate-600');
+    toggleBtn.classList.replace('hover:bg-blue-700', 'hover:bg-slate-700');
+    recalculate();
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closeForm() {
+    formWrapper.classList.add('hidden');
+    toggleBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg> Open Pay All Form';
+    toggleBtn.classList.replace('bg-slate-600', 'bg-blue-600');
+    toggleBtn.classList.replace('hover:bg-slate-700', 'hover:bg-blue-700');
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    formWrapper.classList.contains('hidden') ? openForm() : closeForm();
+  });
+  if (cancelBtn) cancelBtn.addEventListener('click', closeForm);
+
+  const insurancePct  = {{ visit.patient.insurance.coverage_percentage|default:0 }};
+  const currencyLabel = "{{ currency }}";
+
+  function fmt(n) {
+    return new Intl.NumberFormat(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}).format(n) + ' ' + currencyLabel;
+  }
+
+  function recalculate() {
+    let total = 0;
+
+    // Consultation checkbox
+    const consultCheck = document.querySelector('input[name="include_consultation"]');
+    if (consultCheck && consultCheck.checked) {
+      const amt = parseFloat(document.querySelector('input[name="consultation_amount"]').value) || 0;
+      total += amt;
+    }
+
+    // Lab checkboxes
+    document.querySelectorAll('input[name="lab_ids"]:checked').forEach(cb => {
+      const label = cb.closest('label');
+      if (label) {
+        const priceInput = label.querySelector('.pay-all-price-input');
+        if (priceInput) total += parseFloat(priceInput.value) || 0;
+      }
+    });
+
+    // Supply checkboxes
+    document.querySelectorAll('input[name="supply_ids"]:checked').forEach(cb => {
+      const label = cb.closest('label');
+      if (label) {
+        const priceInput = label.querySelector('.pay-all-price-input');
+        if (priceInput) total += parseFloat(priceInput.value) || 0;
+      }
+    });
+
+    const pct         = (100 - insurancePct) / 100;
+    const patientPays = total * pct;
+    const insurancePays = total - patientPays;
+
+    const totalEl    = document.getElementById('pay-all-total');
+    const insurEl    = document.getElementById('pay-all-insurance');
+    const patientEl  = document.getElementById('pay-all-patient');
+    const amtPaidInp = document.getElementById('pay-all-amount-paid');
+
+    if (totalEl)   totalEl.textContent   = fmt(total);
+    if (insurEl)   insurEl.textContent   = fmt(insurancePays);
+    if (patientEl) patientEl.textContent = fmt(patientPays);
+    if (amtPaidInp) amtPaidInp.value = (Math.round(patientPays * 100) / 100).toFixed(2);
+  }
+
+  // Re-run on any checkbox/input change
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('.pay-all-check, .pay-all-price-input')) recalculate();
+  });
+  document.addEventListener('input', function(e) {
+    if (e.target.matches('.pay-all-price-input')) recalculate();
+  });
+})();
+</script>
+{% endblock %}

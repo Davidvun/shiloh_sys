@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Discharge Patient{% endblock %}
+{% block page_title %}Discharge Patient{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }}{% endblock %}
+{% block content %}
+<div class="max-w-lg">
+<div class="card">
+  <div class="bg-slate-50 rounded-xl p-4 mb-5 text-sm border border-slate-200">
+    <div class="grid grid-cols-2 gap-3">
+      <div><span class="text-slate-500">Ward:</span> <span class="font-medium">{{ admission.ward }}</span></div>
+      <div><span class="text-slate-500">Bed:</span> <span class="font-medium">{{ admission.bed_number }}</span></div>
+      <div><span class="text-slate-500">Admitted:</span> <span class="font-medium">{{ admission.admission_date|date:"M d, Y" }}</span></div>
+      <div><span class="text-slate-500">Days:</span> <span class="font-medium">{{ admission.days_admitted }}</span></div>
+      {% if admission.daily_rate %}<div><span class="text-slate-500">Total Cost:</span> <span class="font-bold text-blue-700">{{ admission.total_admission_cost|floatformat:-2 }} {{ currency }}</span></div>{% endif %}
+    </div>
+  </div>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div><label class="form-label">Discharge Notes</label><textarea name="discharge_notes" class="form-input" rows="3"></textarea></div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-success">Confirm Discharge</button>
+      <a href="{% url 'visit_detail' pk=visit.pk %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Request Edit{% endblock %}
+{% block page_title %}Request Patient Edit{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+<div class="card">
+  <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-5">
+    <div class="flex items-center gap-2 text-amber-700 font-medium text-sm"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Edit requests require admin approval before changes are applied.</div>
+  </div>
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div><label class="form-label">Full Name</label><input name="full_name" value="{{ patient.full_name }}" required class="form-input" /></div>
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="form-label">Age</label><input type="number" name="age" value="{{ patient.age }}" required class="form-input" /></div>
+      <div><label class="form-label">Gender</label>
+        <select name="gender" class="form-input">
+          <option value="M" {% if patient.gender == 'M' %}selected{% endif %}>Male</option>
+          <option value="F" {% if patient.gender == 'F' %}selected{% endif %}>Female</option>
+          <option value="O" {% if patient.gender == 'O' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+    </div>
+    <div><label class="form-label">Phone</label><input name="phone" value="{{ patient.phone }}" class="form-input" /></div>
+    <div><label class="form-label">Address</label><textarea name="address" class="form-input" rows="2">{{ patient.address }}</textarea></div>
+    <div><label class="form-label">Reason for Edit (required)</label><textarea name="reason" required class="form-input" rows="2" placeholder="Why is this change needed?"></textarea></div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">Submit Edit Request</button>
+      <a href="{% url 'patient_detail' pk=patient.pk %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

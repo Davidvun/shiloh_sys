@@ -1,0 +1,546 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HMS{% endblock %} — SHILOH HMS</title>
+  {% if hospital_logo_url %}
+  <link rel="icon" type="image/png" href="{{ hospital_logo_url }}" />
+  {% else %}
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231a7bea'/%3E%3Cpath d='M12 5v14M5 12h14' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  {% endif %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'sans-serif'], mono: ['DM Mono', 'monospace'] },
+          colors: {
+            brand: { 50:'#eef7ff', 100:'#d9edff', 200:'#bce0ff', 300:'#8eceff', 400:'#5ab4fd', 500:'#3498f5', 600:'#1a7bea', 700:'#1364d8', 800:'#1550af', 900:'#17458a' },
+            slate: { 850:'#172033' }
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    body { font-family: 'DM Sans', sans-serif; }
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white transition-all text-sm font-medium; }
+    .sidebar-link.active { @apply bg-brand-600 text-white shadow-lg; }
+    .card { @apply bg-white rounded-2xl shadow-sm border border-slate-100 p-6; }
+    .btn-primary { @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .btn-secondary { @apply inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .btn-danger { @apply inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .btn-success { @apply inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .form-input { @apply w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all; }
+    .form-label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+    .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
+    .badge-blue { @apply badge bg-blue-100 text-blue-700; }
+    .badge-green { @apply badge bg-emerald-100 text-emerald-700; }
+    .badge-yellow { @apply badge bg-amber-100 text-amber-700; }
+    .badge-red { @apply badge bg-red-100 text-red-700; }
+    .badge-gray { @apply badge bg-slate-100 text-slate-600; }
+    .table-row { @apply border-b border-slate-100 hover:bg-slate-50 transition-colors; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.55); border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.9); }
+    /* Search icon clearance — overrides px-3 from form-input */
+    input[name="q"] { padding-left: 2.25rem !important; padding-right: 1rem; }
+    /* Clearer table row dividers */
+    #results-table tbody tr { border-bottom: 1px solid #e2e8f0; }
+    #results-table thead th { border-bottom: 2px solid #e2e8f0; }
+    /* Zebra stripe for readability */
+    #results-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+    #results-table tbody tr:hover { background-color: #f1f5f9 !important; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+<!-- ═══ Page-transition progress bar ═══ -->
+<div id="hms-progress"
+     style="position:fixed;top:0;left:0;z-index:10000;height:3px;width:0%;
+            background:linear-gradient(90deg,#1a7bea 0%,#5ab4fd 60%,#a8d8ff 100%);
+            opacity:0;pointer-events:none;
+            transition:width .25s ease,opacity .35s ease;">
+  <!-- glow tip -->
+  <div style="position:absolute;right:-1px;top:-3px;width:8px;height:9px;
+              border-radius:50%;background:#5ab4fd;
+              box-shadow:0 0 8px 3px rgba(90,180,253,.7);"></div>
+</div>
+
+{% if user.is_authenticated %}
+<!-- SIDEBAR -->
+<aside class="w-64 h-screen bg-slate-900 flex flex-col fixed top-0 left-0 z-40 shadow-xl overflow-hidden">
+  <!-- Logo -->
+  <div class="px-6 py-5 border-b border-white/10">
+    <div class="flex items-center gap-3">
+      {% if hospital_logo_url %}
+      <img src="{{ hospital_logo_url }}" alt="{{ hospital_name }}"
+           style="width:{{ logo_size_px }};height:{{ logo_size_px }};max-width:48px;max-height:48px"
+           class="object-contain rounded-xl shrink-0" />
+      {% else %}
+      <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      </div>
+      {% endif %}
+      <div>
+        <div class="text-white font-bold text-base leading-none">{{ hospital_name|upper }}</div>
+        <div class="text-slate-400 text-xs mt-0.5">{% trans "Hospital Management" %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Info -->
+  <div class="px-4 py-4 border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-brand-700 rounded-full flex items-center justify-center text-white text-sm font-bold">
+        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-white text-sm font-medium truncate">{{ user.get_full_name }}</div>
+        <div class="text-slate-400 text-xs capitalize">{{ user.get_role_display }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+    <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+      {% trans "Dashboard" %}
+    </a>
+
+    {% if user.role != 'accountant' and user.role != 'lab_technician' %}
+    <a href="{% url 'patient_list' %}" class="sidebar-link {% if 'patient' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+      {% trans "Patients" %}
+    </a>
+    {% endif %}
+
+    {% if user.role == 'receptionist' or user.role == 'admin' %}
+    <a href="{% url 'patient_register' %}" class="sidebar-link {% if request.resolver_match.url_name == 'patient_register' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+      {% trans "Register Patient" %}
+    </a>
+    {% endif %}
+
+    {% if user.role == 'accountant' or user.role == 'admin' %}
+    <a href="{% url 'pending_billing_list' %}" class="sidebar-link {% if 'pending_billing' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      {% trans "Pending Payments" %}
+    </a>
+    <a href="{% url 'billing_dashboard' %}" class="sidebar-link {% if 'billing_dashboard' == request.resolver_match.url_name or 'payment' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      {% trans "Billing" %}
+    </a>
+    <a href="{% url 'lab_billing_list' %}" class="sidebar-link {% if 'lab_billing' in request.resolver_match.url_name or 'lab_payment' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      {% trans "Lab Billing" %}
+    </a>
+    <a href="{% url 'supplies_billing_list' %}" class="sidebar-link {% if 'supplies_billing' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      {% trans "Supplies Billing" %}
+    </a>
+    {% endif %}
+
+    {% if user.role == 'nurse' or user.role == 'admin' %}
+    <a href="{% url 'admission_list' %}" class="sidebar-link {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      {% trans "Ward / Admissions" %}
+    </a>
+    {% endif %}
+
+    {% if user.role == 'doctor' %}
+    <a href="{% url 'doctor_records' %}" class="sidebar-link {% if request.resolver_match.url_name == 'doctor_records' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      {% trans "My Records" %}
+    </a>
+    {% endif %}
+
+    {% if user.role == 'lab_technician' or user.role == 'admin' %}
+    <a href="{% url 'lab_queue' %}" class="sidebar-link {% if 'lab' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      {% trans "Lab Queue" %}
+    </a>
+    {% endif %}
+
+    <a href="{% url 'forms_library' %}" class="sidebar-link {% if 'forms' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      {% trans "Forms" %}
+    </a>
+
+    {% if user.role == 'admin' %}
+    <div class="pt-3 pb-1 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{% trans "Administration" %}</div>
+    <a href="{% url 'user_list' %}" class="sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      {% trans "Users" %}
+    </a>
+    <a href="{% url 'insurance_list' %}" class="sidebar-link {% if 'insurance' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      {% trans "Insurance" %}
+    </a>
+    <a href="{% url 'consumables_list' %}" class="sidebar-link {% if 'consumable' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      {% trans "Supplies Catalogue" %}
+    </a>
+    <a href="{% url 'lab_catalog' %}" class="sidebar-link {% if 'lab_catalog' in request.resolver_match.url_name or 'lab_category' in request.resolver_match.url_name or 'lab_test' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      {% trans "Lab Catalog" %}
+    </a>
+    <a href="{% url 'change_request_list' %}" class="sidebar-link {% if 'change_request' in request.resolver_match.url_name %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      {% trans "Patient Changes" %}
+      {% with pending=pending_change_count %}{% if pending %}<span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ pending }}</span>{% endif %}{% endwith %}
+    </a>
+    <a href="{% url 'revoked_payments_admin' %}" class="sidebar-link {% if request.resolver_match.url_name == 'revoked_payments_admin' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+      {% trans "Revoked Payments" %}
+    </a>
+    <a href="{% url 'audit_log' %}" class="sidebar-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      {% trans "Audit Logs" %}
+    </a>
+    <a href="{% url 'hospital_settings' %}" class="sidebar-link {% if request.resolver_match.url_name == 'hospital_settings' %}active{% endif %}">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      {% trans "Settings" %}
+    </a>
+    {% endif %}
+  </nav>
+
+  <!-- Logout -->
+  <div class="px-3 py-4 border-t border-white/10">
+    <a href="{% url 'logout' %}" class="sidebar-link text-red-400 hover:bg-red-500/10 hover:text-red-300">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      {% trans "Logout" %}
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="ml-64 flex-1 flex flex-col min-h-screen">
+  <!-- Top Bar -->
+  <header class="bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <div class="flex items-center gap-4">
+      <button onclick="history.back()"
+              class="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg transition-colors text-sm"
+              title="Go back">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        {% trans "Back" %}
+      </button>
+      <div>
+        <h1 class="text-lg font-bold text-slate-800">{% block page_title %}Dashboard{% endblock %}</h1>
+        <p class="text-xs text-slate-400">{% block page_subtitle %}{% endblock %}</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      {% if user.role == 'admin' %}
+      {% with count=pending_change_count %}
+      {% if count %}
+      <a href="{% url 'change_request_list' %}" class="relative flex items-center gap-2 bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        {{ count }} recent patient change{{ count|pluralize }}
+      </a>
+      {% endif %}
+      {% endwith %}
+      {% endif %}
+      <form method="post" action="{% url 'set_my_language' %}" class="flex items-center bg-slate-100 rounded-lg p-0.5">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}" />
+        <button type="submit" name="language" value="en" title="English"
+                class="px-2.5 py-1 rounded-md text-sm transition-colors {% if user.preferred_language == 'en' or not user.preferred_language %}bg-white shadow-sm{% else %}opacity-50 hover:opacity-80{% endif %}">
+          🇬🇧
+        </button>
+        <button type="submit" name="language" value="fr" title="Français"
+                class="px-2.5 py-1 rounded-md text-sm transition-colors {% if user.preferred_language == 'fr' %}bg-white shadow-sm{% else %}opacity-50 hover:opacity-80{% endif %}">
+          🇫🇷
+        </button>
+      </form>
+      <a href="{% url 'my_profile' %}" class="text-right hover:opacity-70 transition-opacity">
+        <div class="text-sm font-medium text-slate-800">{{ user.get_full_name }}</div>
+        <div class="text-xs text-slate-400 capitalize">{{ user.get_role_display }}</div>
+      </a>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="px-8 pt-4">
+    {% for message in messages %}
+    <div class="mb-2 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2
+      {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+      {% elif message.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+      {% elif message.tags == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200
+      {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Page Content -->
+  <main class="flex-1 px-8 py-6">
+{% else %}
+<!-- Unauthenticated layout -->
+<div class="flex-1">
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+  </main>
+
+  <footer class="px-8 py-4 border-t border-slate-100 text-xs text-slate-400 flex justify-between">
+    <span>SHILOH HMS &copy; 2025 — {% trans "All rights reserved" %}</span>
+    <span>{% trans "Logged in as" %} <strong>{{ user.username }}</strong> · <span class="capitalize">{{ user.get_role_display }}</span></span>
+  </footer>
+</div>
+{% else %}
+</div>
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+
+<!-- ═══ Global Delete Confirmation Modal ═══ -->
+<div id="hms-delete-modal"
+     class="fixed inset-0 z-[200] hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true" aria-labelledby="hms-modal-title">
+  <!-- Backdrop -->
+  <div id="hms-modal-backdrop" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+  <!-- Panel -->
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 flex flex-col items-center text-center">
+    <!-- Icon -->
+    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4 shrink-0">
+      <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+    <h3 id="hms-modal-title" class="text-lg font-bold text-slate-800 mb-1">Are you sure?</h3>
+    <p id="hms-modal-message" class="text-sm text-slate-500 mb-6 leading-relaxed">This action cannot be undone.</p>
+    <div class="flex gap-3 w-full">
+      <button id="hms-modal-cancel"
+              class="flex-1 inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        Cancel
+      </button>
+      <button id="hms-modal-confirm"
+              class="flex-1 inline-flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Page-transition progress bar ── */
+(function () {
+  var bar = document.getElementById('hms-progress');
+  var trickleTimer, width = 0;
+
+  function setWidth(w, instant) {
+    bar.style.transition = instant
+      ? 'none'
+      : 'width .25s ease, opacity .35s ease';
+    bar.style.width = w + '%';
+  }
+
+  function start() {
+    clearInterval(trickleTimer);
+    width = 0;
+    setWidth(0, true);
+    bar.style.opacity = '1';
+    /* small kick so the bar is visible immediately */
+    requestAnimationFrame(function () {
+      setWidth(15, false);
+      width = 15;
+      trickleTimer = setInterval(function () {
+        /* slow logarithmic trickle — never reaches 95 on its own */
+        var inc = (95 - width) * 0.08;
+        if (inc < 0.4) inc = 0.4;
+        width = Math.min(width + inc, 94);
+        setWidth(width, false);
+      }, 350);
+    });
+    sessionStorage.setItem('hms_nav', '1');
+  }
+
+  function finish() {
+    clearInterval(trickleTimer);
+    bar.style.transition = 'width .2s ease';
+    bar.style.width = '100%';
+    setTimeout(function () {
+      bar.style.transition = 'opacity .3s ease';
+      bar.style.opacity = '0';
+      setTimeout(function () {
+        setWidth(0, true);
+      }, 320);
+    }, 180);
+    sessionStorage.removeItem('hms_nav');
+  }
+
+  /* ── If arriving on a new page after a navigation, finish the bar ── */
+  window.addEventListener('pageshow', function () {
+    if (sessionStorage.getItem('hms_nav')) {
+      /* appear at ~85 % then complete */
+      bar.style.opacity = '1';
+      setWidth(85, true);
+      requestAnimationFrame(function () { finish(); });
+    }
+  });
+
+  /* ── Intercept link clicks ── */
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href') || '';
+    /* skip: external, new tab, hash-only, special schemes, AJAX pagination */
+    if (link.target === '_blank') return;
+    if (/^(#|javascript:|mailto:|tel:)/.test(href)) return;
+    if (href.startsWith('?')) return;   /* swapResults() handles these */
+    if (link.hostname && link.hostname !== location.hostname) return;
+    if (e.defaultPrevented) return;
+    start();
+  }, true);
+
+  /* ── Intercept form submissions ── */
+  document.addEventListener('submit', function (e) {
+    if (e.defaultPrevented) return;
+    if (e.target.dataset.noProgress !== undefined) return;
+    start();
+  }, true);
+})();
+</script>
+
+<script>
+(function () {
+  var modal    = document.getElementById('hms-delete-modal');
+  var backdrop = document.getElementById('hms-modal-backdrop');
+  var titleEl  = document.getElementById('hms-modal-title');
+  var msgEl    = document.getElementById('hms-modal-message');
+  var cancelBtn  = document.getElementById('hms-modal-cancel');
+  var confirmBtn = document.getElementById('hms-modal-confirm');
+  var pendingAction = null;
+
+  function openModal(title, message, actionLabel, action) {
+    titleEl.textContent  = title  || 'Are you sure?';
+    msgEl.textContent    = message || 'This action cannot be undone.';
+    confirmBtn.lastChild.textContent = ' ' + (actionLabel || 'Delete');
+    pendingAction = action;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    cancelBtn.focus();
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    pendingAction = null;
+  }
+
+  cancelBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  confirmBtn.addEventListener('click', function () {
+    var action = pendingAction;
+    closeModal();
+    if (action) action();
+  });
+
+  // Trigger via data-confirm-form="<form-id>" on any button/element
+  // Use capture=true so stopPropagation() on parent elements cannot block this listener
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-confirm-form]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var form = document.getElementById(el.dataset.confirmForm);
+    if (!form) return;
+    openModal(
+      el.dataset.confirmTitle,
+      el.dataset.confirmMessage,
+      el.dataset.confirmLabel,
+      function () { form.submit(); }
+    );
+  }, true);
+
+  // Trigger via data-confirm-href="<url>" on any button/link
+  // Use capture=true so stopPropagation() on parent elements cannot block this listener
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-confirm-href]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var href = el.dataset.confirmHref;
+    openModal(
+      el.dataset.confirmTitle,
+      el.dataset.confirmMessage,
+      el.dataset.confirmLabel || 'Continue',
+      function () { window.location.href = href; }
+    );
+  }, true);
+})();
+</script>
+
+<script>
+  (function () {
+    var timer;
+    var controller; // AbortController for in-flight request
+
+    function swapResults(url) {
+      // Cancel any previous request that hasn't finished yet
+      if (controller) controller.abort();
+      controller = new AbortController();
+
+      fetch(url, { signal: controller.signal })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          var doc = new DOMParser().parseFromString(html, 'text/html');
+          var next = doc.getElementById('results-table');
+          var current = document.getElementById('results-table');
+          if (next && current) {
+            current.innerHTML = next.innerHTML;
+          }
+          history.pushState(null, '', url);
+        })
+        .catch(function (err) {
+          if (err.name !== 'AbortError') window.location.href = url;
+        });
+    }
+
+    // Live search — debounced, only swaps the results card
+    document.addEventListener('input', function (e) {
+      var input = e.target;
+      if (input.tagName !== 'INPUT' || input.name !== 'q') return;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        var params = new URLSearchParams(new FormData(input.closest('form')));
+        params.delete('page');
+        swapResults(window.location.pathname + '?' + params.toString());
+      }, 300);
+    });
+
+    // Pagination links — fetch instead of navigate
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest('a[href]');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      if (!href || !href.startsWith('?')) return;
+      e.preventDefault();
+      swapResults(window.location.pathname + href);
+    });
+
+    // Browser back/forward
+    window.addEventListener('popstate', function () {
+      swapResults(window.location.href);
+    });
+  })();
+</script>
+</body>
+</html>

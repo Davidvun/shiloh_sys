@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Create Payment{% endblock %}
+{% block page_title %}Create Payment{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-lg space-y-4">
+
+  <!-- Consultation fee summary card -->
+  {% if consultation_fee > 0 %}
+  <div class="card bg-emerald-50 border-emerald-200">
+    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">
+      Consultation Charge Summary
+      {% if specialist_label %}<span class="ml-2 font-normal normal-case text-emerald-600">— {{ specialist_label }} rate</span>{% endif %}
+    </p>
+    <div class="space-y-1.5 text-sm">
+      <div class="flex justify-between">
+        <span class="text-slate-600">Total Fee</span>
+        <span class="font-mono font-medium text-slate-800">{{ consultation_fee|floatformat:-2 }} {{ currency }}</span>
+      </div>
+      {% if visit.patient.insurance %}
+      <div class="flex justify-between">
+        <span class="text-slate-600">Insurance covers ({{ visit.patient.insurance.name }})</span>
+        <span id="summary-insurance" class="font-mono text-blue-600"></span>
+      </div>
+      {% endif %}
+      <div class="flex justify-between border-t border-emerald-200 pt-2 mt-1">
+        <span class="font-semibold text-slate-700">Patient Pays</span>
+        <span id="summary-patient-pays" class="font-mono font-bold text-emerald-700 text-base"></span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      {% if consultation_fee > 0 %}
+      <!-- Simplified mode: type and amount are automatic -->
+      <input type="hidden" name="payment_type" id="payment-type-hidden" value="consultation" />
+      <input type="hidden" name="total_amount" id="total-amount-hidden" value="{{ consultation_fee }}" />
+      {% endif %}
+
+      <div id="type-row" {% if consultation_fee > 0 %}class="hidden"{% endif %}>
+        <label class="form-label">Payment Type</label>
+        <select name="payment_type" id="payment-type-select" class="form-input">
+          {% for val, label in payment_types %}
+          <option value="{{ val }}" {% if val == 'consultation' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Payment Method</label>
+        <select name="payment_method" id="payment-method" required class="form-input">
+          {% for val, label in payment_methods %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <!-- Amount: only rendered when not in simplified mode -->
+      {% if not consultation_fee %}
+      <div id="amount-row">
+        <label class="form-label">Total Amount <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">{{ currency }}</span>
+          <input type="number" name="total_amount" id="total-amount-input" min="0" step="0.01"
+                 required class="form-input pl-14" placeholder="0.00" />
+        </div>
+      </div>
+      {% else %}
+      <div id="amount-row" class="hidden">
+        <label class="form-label">Total Amount <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">{{ currency }}</span>
+          <input type="number" name="total_amount_manual" id="total-amount-input" min="0" step="0.01"
+                 class="form-input pl-14" placeholder="0.00" />
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Amount Received (editable, auto-filled from patient_pays via JS) -->
+      <div>
+        <label class="form-label">Amount Received <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+        <input type="number" name="amount_paid" id="amount-paid-input" min="0" step="0.01"
+               class="form-input" placeholder="0.00" />
+        <p class="text-xs text-slate-400 mt-1.5">Auto-filled with the patient's share. Edit if the actual amount received differs.</p>
+      </div>
+
+      <div id="notes-toggle" class="text-sm">
+        <button type="button" id="show-notes-btn" class="text-slate-400 hover:text-slate-600 underline underline-offset-2 text-xs">+ Add notes</button>
+        <div id="notes-row" class="hidden mt-2">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-input" rows="2" placeholder="Optional…"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-1 items-center">
+        <button type="submit" class="btn-primary">Confirm Payment</button>
+        <a href="{% url 'visit_detail' pk=visit.pk %}" class="btn-secondary">Cancel</a>
+        {% if consultation_fee > 0 %}
+        <button type="button" id="other-type-btn" class="ml-auto text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2">
+          Other payment type
+        </button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const consultationFee    = {{ consultation_fee|default:0 }};
+  const insurancePct       = {{ visit.patient.insurance.coverage_percentage|default:0 }};
+  const currencyLabel      = "{{ currency }}";
+
+  function fmt(n, c) {
+    return new Intl.NumberFormat(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}).format(n) + ' ' + c;
+  }
+
+  const summaryPatientEl   = document.getElementById('summary-patient-pays');
+  const summaryInsuranceEl = document.getElementById('summary-insurance');
+  const amountPaidInput    = document.getElementById('amount-paid-input');
+
+  function setPatientPaysFromFee(fee) {
+    if (fee > 0) {
+      const pct         = (100 - insurancePct) / 100;
+      const patientPays = fee * pct;
+      const insPaysCdf  = fee - patientPays;
+      if (summaryPatientEl)   summaryPatientEl.textContent   = fmt(patientPays, currencyLabel);
+      if (summaryInsuranceEl) summaryInsuranceEl.textContent = fmt(insPaysCdf, currencyLabel);
+      if (amountPaidInput)    amountPaidInput.value = Math.round(patientPays * 100) / 100;
+    }
+  }
+
+  setPatientPaysFromFee(consultationFee);
+
+  // "Other payment type" toggle
+  const otherBtn     = document.getElementById('other-type-btn');
+  const typeRow      = document.getElementById('type-row');
+  const typeHidden   = document.getElementById('payment-type-hidden');
+  const typeSelect   = document.getElementById('payment-type-select');
+  const amountRow    = document.getElementById('amount-row');
+  const amountHidden = document.getElementById('total-amount-hidden');
+  const amountInput  = document.getElementById('total-amount-input');
+
+  if (otherBtn) {
+    otherBtn.addEventListener('click', () => {
+      typeRow.classList.remove('hidden');
+      amountRow.classList.remove('hidden');
+      typeHidden.disabled = true;        // disable hidden field so select is used
+      amountHidden.disabled = true;      // disable hidden field so input is used
+      amountInput.required = true;
+      otherBtn.classList.add('hidden');
+      typeSelect.focus();
+    });
+
+    typeSelect.addEventListener('change', () => {
+      if (typeSelect.value === 'consultation' && consultationFee > 0) {
+        amountInput.value = consultationFee;
+      } else {
+        amountInput.value = '';
+      }
+    });
+  }
+
+  // Notes toggle
+  document.getElementById('show-notes-btn').addEventListener('click', function () {
+    document.getElementById('notes-row').classList.remove('hidden');
+    this.classList.add('hidden');
+  });
+</script>
+{% endblock %}

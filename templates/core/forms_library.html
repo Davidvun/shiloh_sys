@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Forms Library{% endblock %}
+{% block page_title %}Forms Library{% endblock %}
+{% block page_subtitle %}Download patient forms and documentation{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Upload panel (admin only) -->
+  {% if user.role == 'admin' %}
+  <div class="card">
+    <h2 class="font-semibold text-slate-800 mb-4">Upload New Form</h2>
+    <form method="post" action="{% url 'form_upload' %}" enctype="multipart/form-data" class="flex flex-wrap gap-4 items-end">
+      {% csrf_token %}
+      <div class="flex-1 min-w-48">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" required class="form-input" placeholder="e.g. Patient Consent Form" />
+      </div>
+      <div class="w-48">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-input">
+          {% for val, label in categories %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex-1 min-w-48">
+        <label class="form-label">Description <span class="text-slate-400 font-normal">(optional)</span></label>
+        <input type="text" name="description" class="form-input" placeholder="Brief description…" />
+      </div>
+      <div class="w-56">
+        <label class="form-label">File</label>
+        <input type="file" name="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+               class="form-input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer" />
+      </div>
+      <button type="submit" class="btn-primary shrink-0">Upload Form</button>
+    </form>
+    <p class="text-xs text-slate-400 mt-3">Accepted: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), or image files. Max recommended size: 10 MB.</p>
+  </div>
+  {% endif %}
+
+  <!-- Search & Filter -->
+  <div class="flex flex-wrap gap-3 items-center">
+    <form method="get" class="flex gap-3 flex-1 flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search forms…" class="form-input" />
+      </div>
+      <select name="category" class="form-input w-48" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for val, label in categories %}
+        <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-secondary">Filter</button>
+      {% if q or selected_category %}
+      <a href="{% url 'forms_library' %}" class="btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Forms grouped by category -->
+  {% if grouped_forms %}
+    {% for category_name, forms in grouped_forms.items %}
+    <div class="card">
+      <h3 class="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-brand-500 inline-block"></span>
+        {{ category_name }}
+        <span class="text-xs font-normal text-slate-400">({{ forms|length }} form{{ forms|length|pluralize }})</span>
+      </h3>
+      <div class="divide-y divide-slate-100">
+        {% for form in forms %}
+        <div class="py-3 flex items-center gap-4 {% if not form.is_active %}opacity-50{% endif %}">
+
+          <!-- File type icon -->
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0
+            {% if form.file_extension == 'pdf' %}bg-red-50 text-red-600
+            {% elif form.file_extension in 'doc,docx' %}bg-blue-50 text-blue-600
+            {% elif form.file_extension in 'xls,xlsx' %}bg-emerald-50 text-emerald-600
+            {% else %}bg-slate-100 text-slate-500{% endif %}">
+            {% if form.file_extension == 'pdf' %}
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+            {% elif form.file_extension == 'doc' or form.file_extension == 'docx' %}
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+            {% else %}
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+            {% endif %}
+          </div>
+
+          <!-- Form info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-medium text-slate-800 text-sm">{{ form.title }}</span>
+              {% if not form.is_active %}
+              <span class="badge badge-gray">Inactive</span>
+              {% endif %}
+              <span class="text-xs text-slate-400 uppercase font-mono">{{ form.file_extension }}</span>
+            </div>
+            {% if form.description %}
+            <p class="text-xs text-slate-500 mt-0.5 truncate">{{ form.description }}</p>
+            {% endif %}
+            <p class="text-xs text-slate-400 mt-0.5">
+              Uploaded by {{ form.uploaded_by.get_full_name|default:"Admin" }} &middot; {{ form.created_at|date:"d M Y" }}
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2 shrink-0">
+            <a href="{{ form.file.url }}" download
+               class="btn-primary text-xs py-1.5 px-3">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Download
+            </a>
+
+            {% if user.role == 'admin' %}
+            <form method="post" action="{% url 'form_toggle' pk=form.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="btn-secondary text-xs py-1.5 px-3">
+                {% if form.is_active %}Deactivate{% else %}Activate{% endif %}
+              </button>
+            </form>
+            <form id="form-del-{{ form.pk }}" method="post" action="{% url 'form_delete' pk=form.pk %}" class="inline">
+              {% csrf_token %}
+            </form>
+            <button type="button" class="btn-danger text-xs py-1.5 px-3"
+                    data-confirm-form="form-del-{{ form.pk }}"
+                    data-confirm-title="Delete Form"
+                    data-confirm-message="Delete &quot;{{ form.title|escapejs }}&quot;? This cannot be undone.">
+              Delete
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="card text-center py-16">
+    <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-slate-500 font-medium">No forms found</p>
+    <p class="text-slate-400 text-sm mt-1">
+      {% if q or selected_category %}Try adjusting your search or filter.{% elif user.role == 'admin' %}Upload your first form using the panel above.{% else %}No forms have been uploaded yet. Contact an administrator.{% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

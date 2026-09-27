@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Change History{% endblock %}
+{% block page_title %}Change History{% endblock %}
+{% block page_subtitle %}Log of patient edits and deletions{% endblock %}
+{% block content %}
+
+<div class="flex items-center gap-2 mb-4 flex-wrap">
+  <a href="?" class="{% if not action_filter %}btn-primary{% else %}btn-secondary{% endif %}">All Changes</a>
+  <a href="?action=EDIT_PATIENT" class="{% if action_filter == 'EDIT_PATIENT' %}btn-primary{% else %}btn-secondary{% endif %}">Edits</a>
+  <a href="?action=DELETE_PATIENT" class="{% if action_filter == 'DELETE_PATIENT' %}btn-primary{% else %}btn-secondary{% endif %}">Deletions</a>
+</div>
+
+<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+  <form method="get" class="flex items-center gap-3 flex-wrap">
+    {% if action_filter %}<input type="hidden" name="action" value="{{ action_filter }}" />{% endif %}
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input name="q" value="{{ q }}" placeholder="Search by user or description…" class="form-input pl-9 w-80 text-sm" />
+    </div>
+    {% if q %}<a href="?{% if action_filter %}action={{ action_filter }}{% endif %}" class="btn-secondary text-sm">Clear</a>{% endif %}
+    <div class="flex items-center gap-2">
+      <span class="text-sm text-slate-500">Show</span>
+      <select name="per_page" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-slate-700">
+        {% for n in per_page_options %}<option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="results-table">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Time</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Done By</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Details</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Patient #</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 bg-white">
+        {% for log in page_obj %}
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">{{ log.created_at|date:"M d, Y H:i" }}</td>
+          <td class="px-6 py-4">
+            <span class="badge {% if log.action == 'DELETE_PATIENT' %}badge-red{% else %}badge-yellow{% endif %}">
+              {% if log.action == 'DELETE_PATIENT' %}DELETE{% else %}EDIT{% endif %}
+            </span>
+          </td>
+          <td class="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">{{ log.user.get_full_name }} <span class="text-xs text-slate-400">({{ log.user.role }})</span></td>
+          <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="{{ log.description }}">{{ log.description }}</td>
+          <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ log.object_id }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="px-6 py-14 text-center text-slate-400">No changes recorded{% if q %} matching "{{ q }}"{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-6 pb-4 border-t border-slate-100">
+    {% include 'includes/pagination.html' %}
+  </div>
+</div>
+
+{% endblock %}

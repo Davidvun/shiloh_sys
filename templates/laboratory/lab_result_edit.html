@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Edit Lab Result{% endblock %}
+{% block page_title %}Edit Lab Result{% endblock %}
+{% block page_subtitle %}{{ lab.test_name }} — {{ lab.visit.patient.full_name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+<div class="card">
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 flex items-start gap-3 text-sm">
+    <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div>
+      <p class="font-semibold text-blue-800">Editing a submitted result</p>
+      <p class="text-blue-700 mt-0.5">Changes are logged in the audit trail. The doctor will see the updated values immediately.</p>
+    </div>
+  </div>
+
+  <div class="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200 text-sm">
+    <div class="grid grid-cols-2 gap-3">
+      <div><span class="text-slate-500">Test:</span> <span class="font-semibold">{{ lab.test_name }}</span></div>
+      <div><span class="text-slate-500">Patient:</span> <span class="font-medium">{{ lab.visit.patient.full_name }}</span></div>
+      <div><span class="text-slate-500">Urgency:</span>
+        <span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %}">{{ lab.urgency|upper }}</span>
+      </div>
+      <div><span class="text-slate-500">Originally performed by:</span> <span class="font-medium">{{ result.performed_by.get_full_name }}</span></div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-5">
+    {% csrf_token %}
+    {% if parameters %}
+    <div>
+      <label class="form-label">Component Results</label>
+      <div class="border border-slate-200 rounded-xl overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
+            <tr>
+              <th class="text-left py-2 px-3">Component</th>
+              <th class="text-left py-2 px-3">Value</th>
+              <th class="text-left py-2 px-3">Reference Range</th>
+              <th class="text-center py-2 px-3">Abnormal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in parameters %}
+            {% with existing=result.values.all %}
+            <tr class="border-t border-slate-100">
+              <td class="py-2 px-3 font-medium text-slate-700">{{ p.name }}</td>
+              <td class="py-2 px-3">
+                <div class="flex items-center gap-1.5">
+                  <input name="param_{{ p.pk }}" class="form-input py-1.5"
+                         value="{% for v in existing %}{% if v.parameter_id == p.pk %}{{ v.value }}{% endif %}{% endfor %}"
+                         placeholder="Value" />
+                  {% if p.unit %}<span class="text-xs text-slate-400 shrink-0">{{ p.unit }}</span>{% endif %}
+                </div>
+              </td>
+              <td class="py-2 px-3 text-slate-500 text-xs">{{ p.reference_range|default:"—" }}</td>
+              <td class="py-2 px-3 text-center">
+                <input type="checkbox" name="abnormal_{{ p.pk }}"
+                       {% for v in existing %}{% if v.parameter_id == p.pk and v.is_abnormal %}checked{% endif %}{% endfor %} />
+              </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">Leave blank to clear a component value.</p>
+    </div>
+    <div>
+      <label class="form-label">Additional Notes (optional)</label>
+      <textarea name="result_text" class="form-input" rows="3" placeholder="Any additional freeform notes…">{{ result.result_text }}</textarea>
+    </div>
+    {% else %}
+    <div>
+      <label class="form-label">Result Text <span class="text-red-500">*</span></label>
+      <textarea name="result_text" required class="form-input" rows="5">{{ result.result_text }}</textarea>
+    </div>
+    {% endif %}
+
+    <div>
+      <label class="form-label">Reference Range</label>
+      <textarea name="reference_range" class="form-input" rows="2">{{ result.reference_range }}</textarea>
+    </div>
+    <div>
+      <label class="form-label">Interpretation</label>
+      <textarea name="interpretation" class="form-input" rows="2">{{ result.interpretation }}</textarea>
+    </div>
+    <div>
+      <label class="form-label">Replace Attached File (optional)</label>
+      {% if result.result_file %}
+      <p class="text-xs text-slate-500 mb-1.5">Current file: <a href="{{ result.result_file.url }}" target="_blank" class="text-blue-600 hover:underline">{{ result.result_file.name|cut:"lab_results/" }}</a></p>
+      {% endif %}
+      <input type="file" name="result_file" class="form-input" />
+    </div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">Save Changes</button>
+      <a href="{% url 'lab_completed' %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

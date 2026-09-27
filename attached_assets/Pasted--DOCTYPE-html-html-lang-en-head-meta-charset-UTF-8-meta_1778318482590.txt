@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Table with Tailwind CSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="w-full max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-2xl font-bold text-gray-800">Team Members</h2>
+                <p class="text-sm text-gray-600 mt-1">Manage and view all team members</p>
+            </div>
+
+            <!-- Search Bar and Items Per Page -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Search by name, email, role, or status..."
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="itemsPerPage" class="text-sm text-gray-700 whitespace-nowrap">
+                            Show:
+                        </label>
+                        <select
+                            id="itemsPerPage"
+                            class="block w-20 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg bg-white"
+                        >
+                            <option value="10">10</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="70">70</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th data-column="name" class="sortable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                                <div class="flex items-center">
+                                    Name
+                                    <svg class="sort-icon w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                </div>
+                            </th>
+                            <th data-column="email" class="sortable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                                <div class="flex items-center">
+                                    Email
+                                    <svg class="sort-icon w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                </div>
+                            </th>
+                            <th data-column="role" class="sortable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                                <div class="flex items-center">
+                                    Role
+                                    <svg class="sort-icon w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                </div>
+                            </th>
+                            <th data-column="status" class="sortable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                                <div class="flex items-center">
+                                    Status
+                                    <svg class="sort-icon w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                </div>
+                            </th>
+                            <th data-column="joinDate" class="sortable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                                <div class="flex items-center">
+                                    Join Date
+                                    <svg class="sort-icon w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6" id="paginationContainer">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button id="prevMobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Previous
+                        </button>
+                        <button id="nextMobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Next
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700" id="pageInfo">
+                                <!-- Page info will be inserted here -->
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" id="pageNumbers">
+                                <!-- Page numbers will be inserted here -->
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        const data = [
+            { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Developer', status: 'Active', joinDate: '2023-01-15' },
+            { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', status: 'Active', joinDate: '2023-02-20' },
+            { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'Manager', status: 'Inactive', joinDate: '2022-11-10' },
+            { id: 4, name: 'Alice Williams', email: 'alice@example.com', role: 'Developer', status: 'Active', joinDate: '2023-03-05' },
+            { id: 5, name: 'Charlie Brown', email: 'charlie@example.com', role: 'Analyst', status: 'Active', joinDate: '2023-01-28' },
+            { id: 6, name: 'Diana Prince', email: 'diana@example.com', role: 'Designer', status: 'Active', joinDate: '2022-12-15' },
+            { id: 7, name: 'Edward Norton', email: 'edward@example.com', role: 'Developer', status: 'Inactive', joinDate: '2022-10-20' },
+            { id: 8, name: 'Fiona Green', email: 'fiona@example.com', role: 'Manager', status: 'Active', joinDate: '2023-04-12' },
+            { id: 9, name: 'George White', email: 'george@example.com', role: 'Analyst', status: 'Active', joinDate: '2023-02-08' },
+            { id: 10, name: 'Hannah Black', email: 'hannah@example.com', role: 'Designer', status: 'Active', joinDate: '2023-03-22' },
+            { id: 11, name: 'Ian Gray', email: 'ian@example.com', role: 'Developer', status: 'Inactive', joinDate: '2022-09-14' },
+            { id: 12, name: 'Julia Red', email: 'julia@example.com', role: 'Manager', status: 'Active', joinDate: '2023-01-05' },
+            { id: 13, name: 'Kevin Blue', email: 'kevin@example.com', role: 'Developer', status: 'Active', joinDate: '2023-05-18' },
+            { id: 14, name: 'Laura Yellow', email: 'laura@example.com', role: 'Designer', status: 'Active', joinDate: '2023-06-22' },
+            { id: 15, name: 'Mike Orange', email: 'mike@example.com', role: 'Analyst', status: 'Inactive', joinDate: '2022-08-30' },
+            { id: 16, name: 'Nancy Purple', email: 'nancy@example.com', role: 'Manager', status: 'Active', joinDate: '2023-03-14' },
+            { id: 17, name: 'Oliver Pink', email: 'oliver@example.com', role: 'Developer', status: 'Active', joinDate: '2023-07-09' },
+            { id: 18, name: 'Patricia Brown', email: 'patricia@example.com', role: 'Designer', status: 'Active', joinDate: '2023-02-25' },
+            { id: 19, name: 'Quinn Silver', email: 'quinn@example.com', role: 'Analyst', status: 'Active', joinDate: '2023-04-17' },
+            { id: 20, name: 'Rachel Gold', email: 'rachel@example.com', role: 'Manager', status: 'Inactive', joinDate: '2022-12-03' },
+        ];
+
+        // State
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let searchQuery = '';
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let filteredData = [...data];
+
+        // Get initials from name
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('');
+        }
+
+        // Filter data based on search
+        function filterData() {
+            if (!searchQuery) {
+                filteredData = [...data];
+            } else {
+                filteredData = data.filter(item => {
+                    return Object.values(item).some(value => 
+                        value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                });
+            }
+            sortData();
+        }
+
+        // Sort data
+        function sortData() {
+            if (!sortColumn) return;
+
+            filteredData.sort((a, b) => {
+                const aValue = a[sortColumn];
+                const bValue = b[sortColumn];
+
+                if (aValue < bValue) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+
+        // Render table
+        function renderTable() {
+            const tableBody = document.getElementById('tableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentData = filteredData.slice(startIndex, endIndex);
+
+            if (currentData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="mt-2 text-sm">No results found</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = currentData.map((item, index) => `
+                    <tr class="${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                                        ${getInitials(item.name)}
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${item.name}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${item.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                ${item.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                item.status === 'Active' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                            }">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${item.joinDate}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderPagination();
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+
+            // Update page info
+            const pageInfo = document.getElementById('pageInfo');
+            if (filteredData.length > 0) {
+                pageInfo.innerHTML = `
+                    Showing <span class="font-medium">${startIndex + 1}</span> to 
+                    <span class="font-medium">${endIndex}</span> of 
+                    <span class="font-medium">${filteredData.length}</span> results
+                `;
+            }
+
+            // Update mobile buttons
+            const prevMobile = document.getElementById('prevMobile');
+            const nextMobile = document.getElementById('nextMobile');
+            prevMobile.disabled = currentPage === 1;
+            nextMobile.disabled = currentPage === totalPages;
+
+            // Render page numbers
+            const pageNumbers = document.getElementById('pageNumbers');
+            let paginationHTML = `
+                <button class="page-btn prev relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === 1 ? 'disabled' : ''}>
+                    <span class="sr-only">Previous</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <button class="page-number relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === i
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }" data-page="${i}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            paginationHTML += `
+                <button class="page-btn next relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <span class="sr-only">Next</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+
+            pageNumbers.innerHTML = paginationHTML;
+        }
+
+        // Update sort icons
+        function updateSortIcons() {
+            document.querySelectorAll('.sortable').forEach(th => {
+                const column = th.dataset.column;
+                const icon = th.querySelector('.sort-icon');
+                
+                if (sortColumn === column) {
+                    if (sortDirection === 'asc') {
+                        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />';
+                        icon.classList.remove('text-gray-400');
+                        icon.classList.add('text-blue-600');
+                    } else {
+                        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+                        icon.classList.remove('text-gray-400');
+                        icon.classList.add('text-blue-600');
+                    }
+                } else {
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />';
+                    icon.classList.remove('text-blue-600');
+                    icon.classList.add('text-gray-400');
+                }
+            });
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            currentPage = 1;
+            filterData();
+            renderTable();
+        });
+
+        document.getElementById('itemsPerPage').addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderTable();
+        });
+
+        document.querySelectorAll('.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const column = th.dataset.column;
+                
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+                
+                sortData();
+                updateSortIcons();
+                renderTable();
+            });
+        });
+
+        // Pagination event delegation
+        document.getElementById('pageNumbers').addEventListener('click', (e) => {
+            if (e.target.classList.contains('page-number')) {
+                currentPage = parseInt(e.target.dataset.page);
+                renderTable();
+            } else if (e.target.closest('.page-btn.prev')) {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            } else if (e.target.closest('.page-btn.next')) {
+                const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            }
+        });
+
+        document.getElementById('prevMobile').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        document.getElementById('nextMobile').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+        // Initial render
+        filterData();
+        renderTable();
+        updateSortIcons();
+    </script>
+</body>
+</html>

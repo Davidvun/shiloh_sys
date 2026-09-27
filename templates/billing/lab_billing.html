@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Lab Billing{% endblock %}
+{% block page_title %}Lab Billing{% endblock %}
+{% block page_subtitle %}{{ visits|length }} patient(s) with unpaid lab tests{% endblock %}
+{% block content %}
+<div class="card">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+        <th class="pb-3 pr-4">Patient</th>
+        <th class="pb-3 pr-4">Insurance</th>
+        <th class="pb-3 pr-4">Pending Tests</th>
+        <th class="pb-3 pr-4">Estimated Total</th>
+        <th class="pb-3 pr-4">Visit Since</th>
+        <th class="pb-3">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in visits %}
+      <tr class="table-row">
+        <td class="py-3 pr-4">
+          <div class="font-semibold text-slate-800">{{ v.patient.full_name }}</div>
+          <div class="font-mono text-xs text-blue-600">{{ v.patient.patient_id }}</div>
+        </td>
+        <td class="py-3 pr-4">
+          {% if v.patient.insurance %}
+            <span class="badge badge-blue">{{ v.patient.insurance.name }}</span>
+          {% else %}
+            <span class="badge badge-gray">None</span>
+          {% endif %}
+        </td>
+        <td class="py-3 pr-4">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{{ v.pending_count }}</span>
+        </td>
+        <td class="py-3 pr-4 font-mono font-medium text-slate-700">
+          {% if v.estimated_total > 0 %}
+            {{ v.estimated_total|floatformat:-2 }} {{ currency }}
+          {% else %}
+            <span class="text-slate-400">—</span>
+          {% endif %}
+        </td>
+        <td class="py-3 pr-4 text-slate-500 text-xs">{{ v.created_at|date:"M d, Y" }}</td>
+        <td class="py-3">
+          <a href="{% url 'lab_billing_visit' visit_pk=v.pk %}" class="btn-primary text-xs py-1.5">View &amp; Bill →</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="py-12 text-center text-slate-400">No patients with pending lab tests</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

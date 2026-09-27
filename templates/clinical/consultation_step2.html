@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Diagnosis &amp; Plan — Step 2{% endblock %}
+{% block page_title %}Step 2 of 2 — Diagnosis &amp; Plan{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl space-y-5">
+
+  <!-- Step indicator -->
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 opacity-50">
+      <span class="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </span>
+      <span class="text-sm font-semibold text-slate-500">Initial Assessment</span>
+    </div>
+    <div class="flex-1 h-px bg-slate-200"></div>
+    <div class="flex items-center gap-2">
+      <span class="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+      <span class="text-sm font-semibold text-slate-800">Diagnosis &amp; Plan</span>
+    </div>
+  </div>
+
+  <!-- Step 1 summary -->
+  <div class="card bg-emerald-50 border-emerald-200">
+    <div class="text-xs font-semibold text-emerald-700 mb-2 uppercase tracking-wider flex items-center justify-between">
+      Assessment Summary
+      <a href="{% url 'consultation_create' visit_pk=visit.pk %}" class="text-xs text-blue-600 hover:underline font-normal normal-case">Edit</a>
+    </div>
+    <div class="space-y-1.5 text-sm text-slate-700">
+      <div><span class="text-slate-500">Complaint:</span> {{ consultation.presenting_complaint }}</div>
+      {% if consultation.history %}<div><span class="text-slate-500">History:</span> {{ consultation.history|truncatechars:120 }}</div>{% endif %}
+      {% if consultation.examination_findings %}<div><span class="text-slate-500">Examination:</span> {{ consultation.examination_findings|truncatechars:120 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="text-sm text-slate-500 mb-5">Complete the diagnosis and management plan based on your assessment.</p>
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Diagnosis</label>
+        <textarea name="diagnosis" rows="3" class="form-input"
+          placeholder="Primary and secondary diagnoses…">{{ consultation.diagnosis|default:'' }}</textarea>
+      </div>
+      <div>
+        <label class="form-label">Treatment Plan</label>
+        <textarea name="treatment_plan" rows="3" class="form-input"
+          placeholder="Investigations, management steps, referrals…">{{ consultation.treatment_plan|default:'' }}</textarea>
+      </div>
+      <div>
+        <label class="form-label">Prescription</label>
+        <textarea name="prescription" rows="4" class="form-input font-mono text-sm"
+          placeholder="Drug name — dose — frequency — duration&#10;e.g. Amoxicillin 500mg PO TDS × 7 days">{{ consultation.prescription|default:'' }}</textarea>
+      </div>
+      <div>
+        <label class="form-label">Follow-up Notes</label>
+        <textarea name="follow_up_notes" rows="2" class="form-input"
+          placeholder="Review date, instructions for patient…">{{ consultation.follow_up_notes|default:'' }}</textarea>
+      </div>
+
+      <!-- Admit / Discharge -->
+      <div class="border border-slate-200 rounded-xl p-4 space-y-3">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Next Step for Patient</div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:gap-6">
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="radio" name="patient_next" value="none" class="mt-0.5" {% if not consultation.admit_patient and not consultation.discharge_patient %}checked{% endif %}>
+            <span>
+              <span class="text-sm font-medium text-slate-700 group-hover:text-slate-900">Continue Visit</span>
+              <span class="block text-xs text-slate-400">No immediate admission or discharge</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="radio" name="patient_next" value="admit" class="mt-0.5" {% if consultation.admit_patient %}checked{% endif %}>
+            <span>
+              <span class="text-sm font-medium text-slate-700 group-hover:text-slate-900">Admit Patient</span>
+              <span class="block text-xs text-slate-400">Inpatient admission required</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="radio" name="patient_next" value="discharge" class="mt-0.5" {% if consultation.discharge_patient %}checked{% endif %}>
+            <span>
+              <span class="text-sm font-medium text-slate-700 group-hover:text-slate-900">Discharge Patient</span>
+              <span class="block text-xs text-slate-400">Mark visit as completed</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="btn-primary">Save Consultation</button>
+        <a href="{% url 'visit_detail' pk=visit.pk %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+UnicodeDecodeError at /settings/
+'ascii' codec can't decode byte 0xc3 in position 15: ordinal not in range(128)
+Request Method:	GET
+Request URL:	http://21bbc899-94a0-4932-83f9-ae4b60a46cdd-00-2d97z23cpbsvd.picard.replit.dev/settings/
+Django Version:	5.2.15
+Exception Type:	UnicodeDecodeError
+Exception Value:	
+'ascii' codec can't decode byte 0xc3 in position 15: ordinal not in range(128)
+Exception Location:	/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/gettext.py, line 424, in _parse
+Raised during:	core.views.hospital_settings
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.12.12
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages',
+ '/nix/store/3idd141l4qkq2s4b1jqwfahmzf739yyb-python3.12-pip-25.0.1/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python312.zip',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/y9isj47l7a4i7ycp7njnbgrv7c1kyziv-python3.12-setuptools-80.9.0/lib/python3.12/site-packages']
+Server time:	Sat, 04 Jul 2026 11:55:45 +0200
+Unicode error hint
+The string that could not be encoded/decoded was: e cat��gori
+
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/core/middleware.py, line 23, in __call__
+        translation.activate(lang)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/__init__.py, line 182, in activate
+    return _trans.activate(language)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/trans_real.py, line 302, in activate
+    _active.value = translation(language)
+                         ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/trans_real.py, line 291, in translation
+        _translations[language] = DjangoTranslation(language)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/trans_real.py, line 171, in __init__
+        self._add_local_translations()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/trans_real.py, line 231, in _add_local_translations
+            translation = self._new_gnu_trans(localedir)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/utils/translation/trans_real.py, line 198, in _new_gnu_trans
+        return gettext_module.translation(
+                     …
+Local vars
+/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/gettext.py, line 538, in translation
+                t = _translations.setdefault(key, class_(fp))
+                                                       ^^^^^^^^^^ …
+Local vars
+/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/gettext.py, line 272, in __init__
+            self._parse(fp)
+                 ^^^^^^^^^^^^^^^ …
+Local vars
+/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/gettext.py, line 424, in _parse
+                catalog[str(msg, charset)] = str(tmsg, charset)
+                                                  ^^^^^^^^^^^^^^^^^^ …
+Local vars

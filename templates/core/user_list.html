@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Users{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}Manage system users and roles{% endblock %}
+{% block content %}
+
+<!-- Hidden POST forms for toggle/delete (outside any table, safe) -->
+{% for u in page_obj %}
+  <form id="toggle-form-{{ u.pk }}" method="post" action="{% url 'user_toggle' pk=u.pk %}" class="hidden">{% csrf_token %}</form>
+  {% if not u.is_active %}
+  <form id="delete-form-{{ u.pk }}" method="post" action="{% url 'user_delete' pk=u.pk %}" class="hidden">{% csrf_token %}</form>
+  {% endif %}
+{% endfor %}
+
+<!-- Doctor-specific delete warning modal -->
+<div id="doctor-delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDoctorDeleteModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto z-10 overflow-hidden">
+    <!-- Red header strip -->
+    <div class="bg-red-600 px-6 py-4 flex items-center gap-3">
+      <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <h3 class="font-semibold text-white text-base">Delete Doctor Account</h3>
+    </div>
+    <div class="px-6 py-5">
+      <p class="text-slate-700 text-sm mb-4">
+        You are about to permanently delete <span id="doctor-delete-name" class="font-semibold text-slate-900"></span>.
+      </p>
+      <!-- Warning box -->
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+        <p class="text-sm font-semibold text-red-800 mb-2">⚠ The following records will also be permanently deleted:</p>
+        <ul class="text-sm text-red-700 space-y-1 list-disc list-inside">
+          <li>All consultation notes written by this doctor</li>
+          <li>All lab test requests made by this doctor</li>
+        </ul>
+        <p class="text-xs text-red-600 mt-2">Patient visits and billing history will be preserved, but without the doctor's notes.</p>
+      </div>
+      <p class="text-xs text-slate-500">This action is permanent and cannot be undone.</p>
+    </div>
+    <div class="px-6 pb-5 flex justify-end gap-3">
+      <button type="button" onclick="closeDoctorDeleteModal()" class="btn-secondary">Cancel</button>
+      <button type="button" id="doctor-delete-confirm-btn"
+              class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Delete Permanently
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openDoctorDeleteModal(formId, name) {
+  document.getElementById('doctor-delete-name').textContent = name;
+  document.getElementById('doctor-delete-confirm-btn').onclick = function() {
+    document.getElementById(formId).submit();
+  };
+  const modal = document.getElementById('doctor-delete-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.classList.add('overflow-hidden');
+}
+function closeDoctorDeleteModal() {
+  const modal = document.getElementById('doctor-delete-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.classList.remove('overflow-hidden');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDoctorDeleteModal();
+});
+</script>
+
+<!-- Tabs -->
+<div class="flex items-center gap-1 mb-5 border-b border-slate-200">
+  <a href="{% url 'user_list' %}?tab=active"
+     class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px
+            {% if tab == 'active' %}border-brand-600 text-brand-700{% else %}border-transparent text-slate-500 hover:text-slate-800{% endif %}">
+    Active Users
+  </a>
+  <a href="{% url 'user_list' %}?tab=deactivated"
+     class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-2
+            {% if tab == 'deactivated' %}border-brand-600 text-brand-700{% else %}border-transparent text-slate-500 hover:text-slate-800{% endif %}">
+    Deactivated
+    {% if deactivated_count %}
+    <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-semibold
+                 {% if tab == 'deactivated' %}bg-brand-100 text-brand-700{% else %}bg-slate-200 text-slate-600{% endif %}">
+      {{ deactivated_count }}
+    </span>
+    {% endif %}
+  </a>
+</div>
+
+<div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+  <form method="get" class="flex items-center gap-3 flex-wrap">
+    <input type="hidden" name="tab" value="{{ tab }}" />
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input name="q" value="{{ q }}" placeholder="Search by name, username or role…" class="form-input pl-9 w-72 text-sm" />
+    </div>
+    {% if q %}<a href="{% url 'user_list' %}?tab={{ tab }}" class="btn-secondary text-sm">Clear</a>{% endif %}
+    <div class="flex items-center gap-2">
+      <span class="text-sm text-slate-500">Show</span>
+      <select name="per_page" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-slate-700">
+        {% for n in per_page_options %}<option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  {% if tab == 'active' %}
+  <a href="{% url 'user_create' %}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Create User
+  </a>
+  {% endif %}
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Username</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+          {% if tab == 'deactivated' %}
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</th>
+          {% else %}
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+          {% endif %}
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 bg-white">
+        {% for u in page_obj %}
+        <tr class="hover:bg-slate-50 transition-colors {% if tab == 'deactivated' %}opacity-75{% endif %}">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 {% if tab == 'deactivated' %}bg-slate-100 text-slate-400{% else %}bg-brand-100 text-brand-700{% endif %} rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
+              </div>
+              <span class="font-semibold {% if tab == 'deactivated' %}text-slate-500{% else %}text-slate-800{% endif %}">{{ u.get_full_name }}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-slate-500 font-mono text-xs">{{ u.username }}</td>
+          <td class="px-6 py-4">
+            <span class="badge badge-blue capitalize">{{ u.get_role_display }}{% if u.role == 'doctor' and u.specialty %} / {{ u.get_specialty_display }}{% endif %}</span>
+          </td>
+          {% if tab == 'deactivated' %}
+          <td class="px-6 py-4 text-slate-500 text-xs">{{ u.phone|default:"—" }}</td>
+          {% else %}
+          <td class="px-6 py-4"><span class="badge badge-green">Active</span></td>
+          {% endif %}
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-2">
+              {% if tab == 'active' %}
+                <a href="{% url 'user_edit' pk=u.pk %}" class="btn-secondary text-xs py-1.5">Edit</a>
+                <a href="{% url 'user_reset_password' pk=u.pk %}" class="btn-secondary text-xs py-1.5">Reset PW</a>
+                <button type="button"
+                        data-confirm-form="toggle-form-{{ u.pk }}"
+                        data-confirm-title="Deactivate User"
+                        data-confirm-message="Deactivate {{ u.get_full_name|escapejs }}? They won't be able to log in until reactivated."
+                        data-confirm-label="Deactivate"
+                        class="text-xs py-1.5 px-3 rounded-lg font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors">
+                  Deactivate
+                </button>
+              {% else %}
+                <button type="button"
+                        data-confirm-form="toggle-form-{{ u.pk }}"
+                        data-confirm-title="Reactivate User"
+                        data-confirm-message="Reactivate {{ u.get_full_name|escapejs }}? They will be able to log in again."
+                        data-confirm-label="Reactivate"
+                        class="text-xs py-1.5 px-3 rounded-lg font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors">
+                  Reactivate
+                </button>
+                {% if u.role == 'doctor' %}
+                <button type="button"
+                        onclick="openDoctorDeleteModal('delete-form-{{ u.pk }}', '{{ u.get_full_name|escapejs }}')"
+                        class="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+                  Delete
+                </button>
+                {% else %}
+                <button type="button"
+                        data-confirm-form="delete-form-{{ u.pk }}"
+                        data-confirm-title="Permanently Delete User"
+                        data-confirm-message="Permanently delete {{ u.get_full_name|escapejs }}? This cannot be undone. Their activity history remains in audit logs."
+                        data-confirm-label="Delete Permanently"
+                        class="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+                  Delete
+                </button>
+                {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-6 py-14 text-center text-slate-400">
+            {% if tab == 'deactivated' %}
+            No deactivated users{% if q %} matching "{{ q }}"{% endif %}
+            {% else %}
+            No active users found{% if q %} matching "{{ q }}"{% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-6 pb-4 border-t border-slate-100">
+    {% include 'includes/pagination.html' %}
+  </div>
+</div>
+
+{% endblock %}

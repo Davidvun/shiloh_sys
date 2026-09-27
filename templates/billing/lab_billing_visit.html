@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Bill Lab Tests{% endblock %}
+{% block page_title %}Bill Lab Tests{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl space-y-5">
+
+  <!-- Patient info -->
+  <div class="card bg-slate-50 border-slate-200">
+    <div class="grid grid-cols-3 gap-4 text-sm">
+      <div><span class="text-slate-500 text-xs uppercase tracking-wider">Patient</span><div class="font-semibold text-slate-800 mt-0.5">{{ visit.patient.full_name }}</div></div>
+      <div><span class="text-slate-500 text-xs uppercase tracking-wider">Patient ID</span><div class="font-mono text-blue-600 mt-0.5">{{ visit.patient.patient_id }}</div></div>
+      <div><span class="text-slate-500 text-xs uppercase tracking-wider">Insurance</span>
+        <div class="mt-0.5">
+          {% if visit.patient.insurance %}
+            <span class="badge badge-blue">{{ visit.patient.insurance.name }} (covers {{ visit.patient.insurance.coverage_percentage }}%)</span>
+          {% else %}
+            <span class="badge badge-gray">No Insurance</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" action="{% url 'lab_bulk_payment_create' visit_pk=visit.pk %}" id="billing-form">
+    {% csrf_token %}
+
+    <!-- Lab test selection table -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold text-slate-800">Select Tests to Bill</h2>
+        <div class="flex items-center gap-3 text-xs">
+          <button type="button" onclick="selectAll(true)" class="text-blue-600 hover:underline">Select All</button>
+          <span class="text-slate-300">|</span>
+          <button type="button" onclick="selectAll(false)" class="text-slate-500 hover:underline">Deselect All</button>
+        </div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+            <th class="pb-3 w-8"></th>
+            <th class="pb-3 pr-4">Test</th>
+            <th class="pb-3 pr-4">Category</th>
+            <th class="pb-3 pr-4">Urgency</th>
+            <th class="pb-3 pr-4">Requested By</th>
+            <th class="pb-3 w-36">Amount ({{ currency }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lab in pending_labs %}
+          <tr class="table-row lab-row" data-price="{{ lab.lab_test.default_price|default:0 }}" data-id="{{ lab.pk }}">
+            <td class="py-3 pr-3">
+              <input type="checkbox" name="lab_ids" value="{{ lab.pk }}"
+                class="lab-checkbox w-4 h-4 rounded border-slate-300 text-brand-600 cursor-pointer"
+                checked onchange="recalc()">
+            </td>
+            <td class="py-3 pr-4 font-medium text-slate-800">{{ lab.test_name }}</td>
+            <td class="py-3 pr-4 text-slate-500">{% if lab.lab_test %}{{ lab.lab_test.category.name }}{% else %}<span class="text-slate-400">Custom</span>{% endif %}</td>
+            <td class="py-3 pr-4">
+              <span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %}">{{ lab.get_urgency_display }}</span>
+            </td>
+            <td class="py-3 pr-4 text-slate-500">Dr. {{ lab.requested_by.get_full_name }}</td>
+            <td class="py-3">
+              <input type="number" name="amount_{{ lab.pk }}" id="amount_{{ lab.pk }}"
+                value="{{ lab.lab_test.default_price|default:0|floatformat:-2 }}"
+                min="0" step="1" class="form-input py-1.5 text-right font-mono text-sm w-full"
+                oninput="recalc()">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary + payment -->
+    <div class="card">
+      <h2 class="font-semibold text-slate-800 mb-4">Payment Summary</h2>
+      <div class="grid grid-cols-2 gap-6">
+
+        <!-- Breakdown -->
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Tests selected</span>
+            <span id="selected-count" class="font-semibold text-slate-800">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Subtotal</span>
+            <span id="summary-subtotal" class="font-mono font-medium text-slate-800">0 {{ currency }}</span>
+          </div>
+          {% if visit.patient.insurance %}
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">Insurance covers ({{ visit.patient.insurance.name }})</span>
+            <span id="summary-insurance" class="font-mono text-blue-600">0 {{ currency }}</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+            <span class="font-semibold text-slate-700">Patient Pays</span>
+            <span id="summary-patient" class="font-mono font-bold text-emerald-700 text-base">0 {{ currency }}</span>
+          </div>
+        </div>
+
+        <!-- Payment controls -->
+        <div class="space-y-4">
+          <div>
+            <label class="form-label">Payment Method</label>
+            <select name="payment_method" required class="form-input">
+              {% for val, label in payment_methods %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Amount Received ({{ currency }})</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">{{ currency }}</span>
+              <input type="number" name="amount_paid" id="amount-received"
+                min="0" step="1" class="form-input pl-14 font-mono text-right" placeholder="0" />
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Auto-filled with patient's share. Edit if actual amount differs.</p>
+          </div>
+          <div>
+            <button type="button" id="show-notes-btn" class="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2">+ Add notes</button>
+            <div id="notes-row" class="hidden mt-2">
+              <textarea name="notes" rows="2" class="form-input" placeholder="Optional notes…"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-5 border-t border-slate-100 mt-5">
+        <button type="submit" id="submit-btn" class="btn-primary" disabled>Bill Selected Tests</button>
+        <a href="{% url 'lab_billing_list' %}" class="btn-secondary">Back</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const insurancePct  = {{ visit.patient.insurance.coverage_percentage|default:0 }};
+  const currency      = "{{ currency }}";
+
+  function fmt(n, c) {
+    return new Intl.NumberFormat(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}).format(n) + ' ' + c;
+  }
+
+  function recalc() {
+    let total = 0, count = 0;
+    document.querySelectorAll('.lab-checkbox').forEach(cb => {
+      if (cb.checked) {
+        const row      = cb.closest('tr');
+        const id       = row.dataset.id;
+        const inp      = document.getElementById('amount_' + id);
+        const cdfAmt   = parseFloat(inp.value) || 0;
+        total += cdfAmt;
+        count++;
+      }
+    });
+
+    const pct           = (100 - insurancePct) / 100;
+    const patientPays   = total * pct;
+    const insurancePays = total - patientPays;
+
+    document.getElementById('selected-count').textContent = count;
+    document.getElementById('summary-subtotal').textContent = fmt(total, currency);
+    const insEl = document.getElementById('summary-insurance');
+    if (insEl) insEl.textContent = fmt(insurancePays, currency);
+    document.getElementById('summary-patient').textContent = fmt(patientPays, currency);
+    document.getElementById('amount-received').value = Math.round(patientPays) || '';
+    document.getElementById('submit-btn').disabled = count === 0;
+  }
+
+  function selectAll(state) {
+    document.querySelectorAll('.lab-checkbox').forEach(cb => cb.checked = state);
+    recalc();
+  }
+
+  document.getElementById('show-notes-btn').addEventListener('click', function () {
+    document.getElementById('notes-row').classList.remove('hidden');
+    this.classList.add('hidden');
+  });
+
+  recalc();
+</script>
+{% endblock %}

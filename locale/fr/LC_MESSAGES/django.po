@@ -1,0 +1,737 @@
+# French translation for MediCore HMS
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# base.html — navigation & chrome
+msgid "Hospital Management"
+msgstr "Gestion Hospitalière"
+
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+msgid "Patients"
+msgstr "Patients"
+
+msgid "Register Patient"
+msgstr "Enregistrer un patient"
+
+msgid "Pending Payments"
+msgstr "Paiements en attente"
+
+msgid "Billing"
+msgstr "Facturation"
+
+msgid "Lab Billing"
+msgstr "Facturation Labo"
+
+msgid "Supplies Billing"
+msgstr "Facturation Fournitures"
+
+msgid "Ward / Admissions"
+msgstr "Salle / Admissions"
+
+msgid "My Records"
+msgstr "Mes Dossiers"
+
+msgid "Lab Queue"
+msgstr "File Laboratoire"
+
+msgid "Forms"
+msgstr "Formulaires"
+
+msgid "Administration"
+msgstr "Administration"
+
+msgid "Users"
+msgstr "Utilisateurs"
+
+msgid "Insurance"
+msgstr "Assurance"
+
+msgid "Supplies Catalogue"
+msgstr "Catalogue Fournitures"
+
+msgid "Lab Catalog"
+msgstr "Catalogue Laboratoire"
+
+msgid "Patient Changes"
+msgstr "Modifications Patients"
+
+msgid "Revoked Payments"
+msgstr "Paiements Révoqués"
+
+msgid "Audit Logs"
+msgstr "Journaux d'Audit"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "Logout"
+msgstr "Déconnexion"
+
+msgid "Back"
+msgstr "Retour"
+
+msgid "All rights reserved"
+msgstr "Tous droits réservés"
+
+msgid "Logged in as"
+msgstr "Connecté en tant que"
+
+# login.html
+msgid "Login"
+msgstr "Connexion"
+
+msgid "Hospital Management System"
+msgstr "Système de Gestion Hospitalière"
+
+msgid "Sign in to your account"
+msgstr "Connexion à votre compte"
+
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+msgid "Password"
+msgstr "Mot de passe"
+
+msgid "Security Check"
+msgstr "Vérification de sécurité"
+
+msgid "anti-bot verification"
+msgstr "vérification anti-robot"
+
+msgid "What is"
+msgstr "Combien font"
+
+msgid "Enter your username"
+msgstr "Entrez votre nom d'utilisateur"
+
+msgid "Enter your password"
+msgstr "Entrez votre mot de passe"
+
+msgid "Enter the answer"
+msgstr "Entrez la réponse"
+
+msgid "Sign In"
+msgstr "Se connecter"
+
+msgid "Secure Healthcare Management"
+msgstr "Gestion Sécurisée des Soins"
+
+# hospital_settings.html
+msgid "Hospital Settings"
+msgstr "Paramètres de l'Hôpital"
+
+msgid "Configure system-wide branding, pricing and defaults"
+msgstr "Configurer le branding, les prix et les paramètres par défaut"
+
+msgid "System Language"
+msgstr "Langue du Système"
+
+msgid "Changes the display language for all users across the entire system."
+msgstr "Change la langue d'affichage pour tous les utilisateurs du système."
+
+msgid "Save Language"
+msgstr "Enregistrer la langue"
+
+msgid "Branding & Identity"
+msgstr "Identité et Branding"
+
+msgid "Hospital Name"
+msgstr "Nom de l'Hôpital"
+
+msgid "Hospital Logo"
+msgstr "Logo de l'Hôpital"
+
+msgid "Logo Display Size"
+msgstr "Taille d'affichage du logo"
+
+msgid "Save Branding"
+msgstr "Enregistrer le branding"
+
+msgid "Billing Settings"
+msgstr "Paramètres de Facturation"
+
+msgid "Save Settings"
+msgstr "Enregistrer les paramètres"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+# dashboard.html
+msgid "Total Patients"
+msgstr "Total Patients"
+
+msgid "Total Visits"
+msgstr "Total Visites"
+
+msgid "Active Users"
+msgstr "Utilisateurs Actifs"
+
+msgid "Pending Approvals"
+msgstr "Approbations en attente"
+
+msgid "Reports"
+msgstr "Rapports"
+
+msgid "My Profile"
+msgstr "Mon Profil"
+
+msgid "Recent Patients"
+msgstr "Patients Récents"
+
+msgid "View all"
+msgstr "Voir tout"
+
+msgid "Patient ID"
+msgstr "ID Patient"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Registered"
+msgstr "Enregistré"
+
+msgid "Recent Patient Changes"
+msgstr "Modifications Patients Récentes"
+
+msgid "No pending requests"
+msgstr "Aucune demande en attente"
+
+msgid "Total Assigned"
+msgstr "Total Assignés"
+
+msgid "Pending"
+msgstr "En attente"
+
+msgid "In Progress"
+msgstr "En cours"
+
+msgid "My Patients — Active Visits"
+msgstr "Mes Patients — Visites Actives"
+
+msgid "Paid"
+msgstr "Payé"
+
+msgid "Not Paid"
+msgstr "Non Payé"
+
+msgid "Patient"
+msgstr "Patient"
+
+msgid "Visit Status"
+msgstr "Statut de la Visite"
+
+msgid "Payment"
+msgstr "Paiement"
+
+msgid "Since"
+msgstr "Depuis"
+
+msgid "Action"
+msgstr "Action"
+
+msgid "View Visit →"
+msgstr "Voir la visite →"
+
+msgid "No active patients assigned"
+msgstr "Aucun patient actif assigné"
+
+msgid "My Registrations"
+msgstr "Mes Enregistrements"
+
+msgid "Today's Registrations"
+msgstr "Enregistrements d'aujourd'hui"
+
+msgid "Pending Visits"
+msgstr "Visites en attente"
+
+msgid "Register New Patient"
+msgstr "Enregistrer un nouveau patient"
+
+msgid "View All Patients"
+msgstr "Voir tous les patients"
+
+msgid "Phone"
+msgstr "Téléphone"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "View"
+msgstr "Voir"
+
+msgid "No patients registered yet"
+msgstr "Aucun patient enregistré"
+
+msgid "Awaiting Triage"
+msgstr "En attente de triage"
+
+msgid "Triaged Today"
+msgstr "Triés aujourd'hui"
+
+msgid "Patients Triaged Today"
+msgstr "Patients triés aujourd'hui"
+
+msgid "View awaiting triage →"
+msgstr "Voir en attente de triage →"
+
+msgid "Doctor"
+msgstr "Médecin"
+
+msgid "Triaged At"
+msgstr "Triage à"
+
+msgid "No patients triaged yet today"
+msgstr "Aucun patient trié aujourd'hui"
+
+msgid "Pending Lab Tests"
+msgstr "Tests Labo en attente"
+
+msgid "Completed Today"
+msgstr "Complétés aujourd'hui"
+
+msgid "Recent Lab Tests"
+msgstr "Tests Labo Récents"
+
+msgid "View Queue"
+msgstr "Voir la file"
+
+msgid "Test"
+msgstr "Test"
+
+msgid "Requested By"
+msgstr "Demandé par"
+
+msgid "Urgency"
+msgstr "Urgence"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Requested"
+msgstr "Demandé"
+
+msgid "No lab tests yet"
+msgstr "Aucun test labo"
+
+msgid "Patients Awaiting Payment"
+msgstr "Patients en attente de paiement"
+
+msgid "Process"
+msgstr "Traiter"
+
+msgid "Recent Payments"
+msgstr "Paiements Récents"
+
+msgid "Receipt"
+msgstr "Reçu"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Amount"
+msgstr "Montant"
+
+msgid "No payments yet"
+msgstr "Aucun paiement"
+
+# patient pages
+msgid "Patient List"
+msgstr "Liste des Patients"
+
+msgid "Search patients..."
+msgstr "Rechercher un patient..."
+
+msgid "Search"
+msgstr "Rechercher"
+
+msgid "Register"
+msgstr "Enregistrer"
+
+msgid "No patients found"
+msgstr "Aucun patient trouvé"
+
+msgid "First Name"
+msgstr "Prénom"
+
+msgid "Last Name"
+msgstr "Nom de famille"
+
+msgid "Date of Birth"
+msgstr "Date de naissance"
+
+msgid "Gender"
+msgstr "Genre"
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Patient Details"
+msgstr "Détails du Patient"
+
+msgid "New Visit"
+msgstr "Nouvelle Visite"
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Visit History"
+msgstr "Historique des Visites"
+
+msgid "No visits yet"
+msgstr "Aucune visite"
+
+# billing pages
+msgid "Create Payment"
+msgstr "Créer un Paiement"
+
+msgid "Consultation Charge Summary"
+msgstr "Résumé des Frais de Consultation"
+
+msgid "Total Fee"
+msgstr "Frais Totaux"
+
+msgid "Insurance covers"
+msgstr "L'assurance couvre"
+
+msgid "Patient Pays"
+msgstr "Patient à payer"
+
+msgid "Payment Method"
+msgstr "Mode de Paiement"
+
+msgid "Amount Received"
+msgstr "Montant Reçu"
+
+msgid "Confirm Payment"
+msgstr "Confirmer le Paiement"
+
+msgid "Payment Type"
+msgstr "Type de Paiement"
+
+msgid "Cash"
+msgstr "Espèces"
+
+msgid "Total Revenue"
+msgstr "Revenus Totaux"
+
+msgid "Today's Revenue"
+msgstr "Revenus d'aujourd'hui"
+
+msgid "Billing Dashboard"
+msgstr "Tableau de bord Facturation"
+
+msgid "Payment List"
+msgstr "Liste des Paiements"
+
+msgid "Pending Billing"
+msgstr "Facturation en attente"
+
+msgid "No pending visits"
+msgstr "Aucune visite en attente"
+
+msgid "Bill Selected Tests"
+msgstr "Facturer les tests sélectionnés"
+
+msgid "Consultation"
+msgstr "Consultation"
+
+msgid "Labs"
+msgstr "Labo"
+
+msgid "Supplies"
+msgstr "Fournitures"
+
+msgid "Unpaid"
+msgstr "Non payé"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Remove"
+msgstr "Supprimer"
+
+msgid "Update"
+msgstr "Mettre à jour"
+
+msgid "Create"
+msgstr "Créer"
+
+msgid "Yes"
+msgstr "Oui"
+
+msgid "No"
+msgstr "Non"
+
+msgid "None"
+msgstr "Aucun"
+
+msgid "Active"
+msgstr "Actif"
+
+msgid "Inactive"
+msgstr "Inactif"
+
+msgid "Print"
+msgstr "Imprimer"
+
+msgid "Close"
+msgstr "Fermer"
+
+msgid "Submit"
+msgstr "Soumettre"
+
+msgid "Confirm"
+msgstr "Confirmer"
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Visit"
+msgstr "Visite"
+
+msgid "Visits"
+msgstr "Visites"
+
+# laboratory pages
+msgid "Lab Request"
+msgstr "Demande Labo"
+
+msgid "Lab Result"
+msgstr "Résultat Labo"
+
+msgid "Lab Tests"
+msgstr "Tests Labo"
+
+msgid "Lab Categories"
+msgstr "Catégories Labo"
+
+msgid "Category"
+msgstr "Catégorie"
+
+msgid "Price"
+msgstr "Prix"
+
+msgid "Add Test"
+msgstr "Ajouter un test"
+
+msgid "Add Category"
+msgstr "Ajouter une catégorie"
+
+# admissions pages
+msgid "Admissions"
+msgstr "Admissions"
+
+msgid "Admit Patient"
+msgstr "Admettre un patient"
+
+msgid "Discharge"
+msgstr "Sortie"
+
+msgid "Discharge Patient"
+msgstr "Libérer le patient"
+
+msgid "Ward"
+msgstr "Salle"
+
+msgid "Room"
+msgstr "Chambre"
+
+msgid "Bed"
+msgstr "Lit"
+
+msgid "Admitted"
+msgstr "Admis"
+
+msgid "Discharged"
+msgstr "Sorti"
+
+msgid "Admission Date"
+msgstr "Date d'admission"
+
+msgid "Discharge Date"
+msgstr "Date de sortie"
+
+# clinical pages
+msgid "Consultation"
+msgstr "Consultation"
+
+msgid "Triage"
+msgstr "Triage"
+
+msgid "Diagnosis"
+msgstr "Diagnostic"
+
+msgid "Treatment"
+msgstr "Traitement"
+
+msgid "Prescription"
+msgstr "Ordonnance"
+
+msgid "Weight"
+msgstr "Poids"
+
+msgid "Height"
+msgstr "Taille"
+
+msgid "Blood Pressure"
+msgstr "Tension artérielle"
+
+msgid "Temperature"
+msgstr "Température"
+
+msgid "Pulse"
+msgstr "Pouls"
+
+# audit / change requests
+msgid "Change Requests"
+msgstr "Demandes de modification"
+
+msgid "Audit Log"
+msgstr "Journal d'Audit"
+
+msgid "Approve"
+msgstr "Approuver"
+
+msgid "Reject"
+msgstr "Rejeter"
+
+msgid "Approved"
+msgstr "Approuvé"
+
+msgid "Rejected"
+msgstr "Rejeté"
+
+# user management
+msgid "User List"
+msgstr "Liste des Utilisateurs"
+
+msgid "Add User"
+msgstr "Ajouter un utilisateur"
+
+msgid "Role"
+msgstr "Rôle"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Change Password"
+msgstr "Changer le mot de passe"
+
+msgid "Reset Password"
+msgstr "Réinitialiser le mot de passe"
+
+msgid "New Password"
+msgstr "Nouveau mot de passe"
+
+msgid "Confirm Password"
+msgstr "Confirmer le mot de passe"
+
+# insurance
+msgid "Insurance List"
+msgstr "Liste des Assurances"
+
+msgid "Add Insurance"
+msgstr "Ajouter une assurance"
+
+msgid "Coverage"
+msgstr "Couverture"
+
+# consumables / supplies
+msgid "Consumables"
+msgstr "Consommables"
+
+msgid "Add Consumable"
+msgstr "Ajouter un consommable"
+
+msgid "Unit"
+msgstr "Unité"
+
+msgid "Stock"
+msgstr "Stock"
+
+msgid "Quantity"
+msgstr "Quantité"
+
+# forms library
+msgid "Forms Library"
+msgstr "Bibliothèque de Formulaires"
+
+msgid "Download"
+msgstr "Télécharger"
+
+# reports
+msgid "Reports"
+msgstr "Rapports"
+
+msgid "Generate Report"
+msgstr "Générer un rapport"
+
+msgid "From"
+msgstr "Du"
+
+msgid "To"
+msgstr "Au"
+
+# 404
+msgid "Page Not Found"
+msgstr "Page Introuvable"
+
+msgid "Go to Dashboard"
+msgstr "Aller au tableau de bord"
+
+# pagination
+msgid "Previous"
+msgstr "Précédent"
+
+msgid "Next"
+msgstr "Suivant"
+
+# my profile
+msgid "My Profile"
+msgstr "Mon Profil"
+
+msgid "Save Profile"
+msgstr "Enregistrer le profil"
+
+# change password
+msgid "Current Password"
+msgstr "Mot de passe actuel"
+
+msgid "Welcome back, %(name)s"
+msgstr "Bienvenue, %(name)s"
+
+msgid "No patients yet"
+msgstr "Aucun patient"
+
+msgid "Recent Patient Changes"
+msgstr "Modifications récentes"
+
+msgid "My Language"
+msgstr "Ma Langue"
+
+msgid "Choose the language you see across the system. This only changes your own view."
+msgstr "Choisissez la langue que vous voyez dans le système. Cela ne change que votre propre affichage."
+
+msgid "Update your username and password"
+msgstr "Mettre à jour votre nom d'utilisateur et votre mot de passe"

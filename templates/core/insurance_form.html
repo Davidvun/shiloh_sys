@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ action }} Insurance{% endblock %}
+{% block page_title %}{{ action }} Insurance Provider{% endblock %}
+{% block content %}
+<div class="max-w-lg">
+<div class="card">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div><label class="form-label">Provider Name</label><input name="name" value="{{ obj.name|default:'' }}" required class="form-input" placeholder="e.g. RSSB, Mituel" /></div>
+    <div>
+      <label class="form-label">Insurance Covers (%)</label>
+      <input type="number" name="coverage_percentage" value="{{ obj.coverage_percentage|default:'' }}" required min="0" max="100" step="0.01" class="form-input" placeholder="e.g. 90 (insurance covers 90%, patient pays 10%)" />
+      <p class="text-xs text-slate-500 mt-1">Enter the percentage the INSURANCE covers. E.g. 90 means insurance pays 90% and the patient pays 10%. Use 100 for full coverage.</p>
+    </div>
+    {% if obj %}
+    <div class="flex items-center gap-2">
+      <input type="checkbox" name="is_active" id="is_active" {% if obj.is_active %}checked{% endif %} class="rounded border-slate-300">
+      <label for="is_active" class="text-sm font-medium text-slate-700">Active</label>
+    </div>
+    {% endif %}
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">{{ action }} Provider</button>
+      <a href="{% url 'insurance_list' %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

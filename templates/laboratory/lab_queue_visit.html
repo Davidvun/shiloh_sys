@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Lab Tests — {{ visit.patient.full_name }}{% endblock %}
+{% block page_title %}Lab Tests{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl space-y-5">
+
+  <!-- Patient info -->
+  <div class="card bg-slate-50 border-slate-200">
+    <div class="grid grid-cols-3 gap-4 text-sm">
+      <div>
+        <span class="text-slate-500 text-xs uppercase tracking-wider">Patient</span>
+        <div class="font-semibold text-slate-800 mt-0.5">{{ visit.patient.full_name }}</div>
+      </div>
+      <div>
+        <span class="text-slate-500 text-xs uppercase tracking-wider">Patient ID</span>
+        <div class="font-mono text-blue-600 mt-0.5">{{ visit.patient.patient_id }}</div>
+      </div>
+      <div>
+        <span class="text-slate-500 text-xs uppercase tracking-wider">Assigned Doctor</span>
+        <div class="font-medium text-slate-700 mt-0.5">Dr. {{ visit.doctor.get_full_name }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Labs table -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-slate-800">Active Lab Requests ({{ labs|length }})</h2>
+      <a href="{% url 'lab_queue' %}" class="text-sm text-blue-600 hover:underline">← Back to Queue</a>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+          <th class="pb-3 pr-4">Test</th>
+          <th class="pb-3 pr-4">Category</th>
+          <th class="pb-3 pr-4">Requested By</th>
+          <th class="pb-3 pr-4">Urgency</th>
+          <th class="pb-3 pr-4">Payment</th>
+          <th class="pb-3 pr-4">Status</th>
+          <th class="pb-3">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lab in labs %}
+        <tr class="table-row">
+          <td class="py-3 pr-4 font-semibold text-slate-800">{{ lab.test_name }}</td>
+          <td class="py-3 pr-4 text-slate-500">
+            {% if lab.lab_test %}{{ lab.lab_test.category.name }}{% else %}<span class="text-slate-400">Custom</span>{% endif %}
+          </td>
+          <td class="py-3 pr-4 text-slate-500">Dr. {{ lab.requested_by.get_full_name }}</td>
+          <td class="py-3 pr-4">
+            <span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %}">
+              {{ lab.urgency|upper }}
+            </span>
+          </td>
+          <td class="py-3 pr-4">
+            {% if lab.status == 'requested' %}
+              <span class="badge badge-red">&#x2717; Unpaid</span>
+            {% else %}
+              <span class="badge badge-green">&#x2713; Paid</span>
+            {% endif %}
+          </td>
+          <td class="py-3 pr-4">
+            <span class="badge {% if lab.status == 'completed' %}badge-green{% elif lab.status == 'in_progress' %}badge-blue{% elif lab.status == 'paid' %}badge-yellow{% else %}badge-gray{% endif %}">
+              {{ lab.get_status_display }}
+            </span>
+          </td>
+          <td class="py-3">
+            {% if lab.status == 'requested' %}
+              <a href="{% url 'lab_result_upload' lab_pk=lab.pk %}"
+                 class="inline-flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-medium transition-colors"
+                 title="Payment pending — processing anyway">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                Process (Unpaid)
+              </a>
+            {% else %}
+              <a href="{% url 'lab_result_upload' lab_pk=lab.pk %}" class="btn-primary text-xs py-1.5">Upload Result</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

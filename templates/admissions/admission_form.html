@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Admit Patient{% endblock %}
+{% block page_title %}Admit Patient{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }}{% endblock %}
+{% block content %}
+<div class="max-w-lg">
+<div class="card">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="form-label">Ward <span class="text-red-500">*</span></label><input name="ward" required class="form-input" placeholder="e.g. General, ICU, Pediatric" /></div>
+      <div><label class="form-label">Bed Number <span class="text-red-500">*</span></label><input name="bed_number" required class="form-input" placeholder="e.g. A-101" /></div>
+    </div>
+    <div><label class="form-label">Daily Rate ({{ currency }})</label><input type="number" name="daily_rate" min="0" step="0.01" class="form-input" value="0" /></div>
+    <div><label class="form-label">Admission Notes</label><textarea name="admission_notes" class="form-input" rows="3"></textarea></div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">Admit Patient</button>
+      <a href="{% url 'visit_detail' pk=visit.pk %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

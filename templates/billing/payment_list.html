@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+  <form method="get" class="flex items-center gap-3 flex-wrap">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input name="q" value="{{ q }}" placeholder="Search by receipt, patient name or ID…" class="form-input pl-9 w-80 text-sm" />
+    </div>
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}" />{% endif %}
+    {% if q %}<a href="{% url 'payment_list' %}{% if status_filter %}?status={{ status_filter }}{% endif %}" class="btn-secondary text-sm">Clear</a>{% endif %}
+    <div class="flex items-center gap-2">
+      <span class="text-sm text-slate-500">Show</span>
+      <select name="per_page" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-slate-700">
+        {% for n in per_page_options %}<option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Status filter tabs -->
+<div class="flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'payment_list' %}{% if q %}?q={{ q }}{% endif %}"
+     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors {% if not status_filter %}bg-brand-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+    All
+  </a>
+  <a href="{% url 'payment_list' %}?status=paid{% if q %}&q={{ q }}{% endif %}"
+     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors {% if status_filter == 'paid' %}bg-emerald-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+    Paid
+  </a>
+  <a href="{% url 'payment_list' %}?status=pending{% if q %}&q={{ q }}{% endif %}"
+     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors {% if status_filter == 'pending' %}bg-amber-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+    Pending
+  </a>
+  <a href="{% url 'payment_list' %}?status=revoked{% if q %}&q={{ q }}{% endif %}"
+     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors {% if status_filter == 'revoked' %}bg-red-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+    Revoked
+  </a>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="results-table">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Receipt</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Patient</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Total ({{ currency }})</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Pt. Pays ({{ currency }})</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 bg-white">
+        {% for p in page_obj %}
+        <tr class="hover:bg-slate-50 transition-colors {% if p.status == 'revoked' %}bg-red-50/40{% endif %}">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="font-mono text-xs text-brand-600 font-semibold">{{ p.receipt_number }}</div>
+            {% if p.status == 'revoked' %}
+            <div class="text-xs text-red-500 mt-0.5">Revoked by {{ p.revoked_by.get_full_name }}</div>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">{{ p.visit.patient.full_name }}</td>
+          <td class="px-6 py-4 text-slate-500">{{ p.get_payment_type_display }}</td>
+          <td class="px-6 py-4 font-mono text-slate-700">{{ p.total_amount|floatformat:-2 }}</td>
+          <td class="px-6 py-4 font-mono font-semibold {% if p.status == 'revoked' %}text-slate-400 line-through{% else %}text-brand-700{% endif %}">{{ p.patient_pays|floatformat:-2 }}</td>
+          <td class="px-6 py-4">
+            <span class="badge {% if p.status == 'paid' %}badge-green{% elif p.status == 'pending' %}badge-yellow{% elif p.status == 'revoked' %}badge-red{% else %}badge-gray{% endif %}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <a href="{% url 'payment_receipt' pk=p.pk %}" class="btn-secondary text-xs py-1.5">Receipt</a>
+              {% if p.status == 'paid' %}
+              <a href="{% url 'payment_revoke' pk=p.pk %}"
+                 class="text-xs font-medium text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors">
+                Revoke
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% if p.status == 'revoked' and p.revoke_reason %}
+        <tr class="bg-red-50/60 border-b border-red-100">
+          <td colspan="7" class="px-6 py-2 text-xs text-red-700">
+            <span class="font-semibold">Revocation reason:</span> {{ p.revoke_reason }}
+            <span class="ml-3 text-red-400">— {{ p.revoked_at|date:"M d, Y H:i" }}</span>
+          </td>
+        </tr>
+        {% endif %}
+        {% empty %}
+        <tr><td colspan="7" class="px-6 py-14 text-center text-slate-400">No payments found{% if q %} matching "{{ q }}"{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-6 pb-4 border-t border-slate-100">
+    {% include 'includes/pagination.html' %}
+  </div>
+</div>
+
+{% endblock %}

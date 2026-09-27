@@ -1,0 +1,13 @@
+Django>=5.0,<6.0
+gunicorn
+Django>=5.0,<6.0
+gunicorn
+whitenoise
+django
+gunicorn
+whitenoise
+Pillow
+Django
+gunicorn
+Pillow
+whitenoise

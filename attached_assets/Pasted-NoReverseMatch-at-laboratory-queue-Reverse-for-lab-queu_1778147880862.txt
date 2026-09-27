@@ -1,0 +1,69 @@
+NoReverseMatch at /laboratory/queue/
+Reverse for 'lab_queue_visit' not found. 'lab_queue_visit' is not a valid view function or pattern name.
+Request Method:	GET
+Request URL:	http://069470ce-3453-48c5-a270-44e44cd8b8ba-00-31qrmuv9xntc4.janeway.replit.dev/laboratory/queue/
+Django Version:	6.0.4
+Exception Type:	NoReverseMatch
+Exception Value:	
+Reverse for 'lab_queue_visit' not found. 'lab_queue_visit' is not a valid view function or pattern name.
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/urls/resolvers.py, line 842, in _reverse_with_prefix
+Raised during:	laboratory.views.lab_queue
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.12.12
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages',
+ '/nix/store/3idd141l4qkq2s4b1jqwfahmzf739yyb-python3.12-pip-25.0.1/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python312.zip',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/y9isj47l7a4i7ycp7njnbgrv7c1kyziv-python3.12-setuptools-80.9.0/lib/python3.12/site-packages']
+Server time:	Thu, 07 May 2026 11:57:52 +0200
+Error during template rendering
+In template /home/runner/workspace/templates/laboratory/lab_queue.html, error at line 44
+
+Reverse for 'lab_queue_visit' not found. 'lab_queue_visit' is not a valid view function or pattern name.
+34	        </td>
+35	        <td class="py-3 pr-4">
+36	          {% if v.has_unpaid %}
+37	            <span class="badge badge-red">&#x2717; Has Unpaid</span>
+38	          {% else %}
+39	            <span class="badge badge-green">&#x2713; All Paid</span>
+40	          {% endif %}
+41	        </td>
+42	        <td class="py-3 pr-4 text-slate-500 text-xs">{{ v.created_at|date:"M d, Y" }}</td>
+43	        <td class="py-3">
+44	          <a href="{% url 'lab_queue_visit' visit_pk=v.pk %}" class="btn-primary text-xs py-1.5">View Tests →</a>
+45	        </td>
+46	      </tr>
+47	      {% empty %}
+48	      <tr><td colspan="7" class="py-12 text-center text-slate-400">No active lab tests in the queue</td></tr>
+49	      {% endfor %}
+50	    </tbody>
+51	  </table>
+52	</div>
+53	{% endblock %}
+54	
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/base.py, line 198, in _get_response
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/core/decorators.py, line 15, in wrapped
+            return view_func(request, *args, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/laboratory/views.py, line 71, in lab_queue
+    return render(request, 'laboratory/lab_queue.html', {'visits': visits})
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/shortcuts.py, line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

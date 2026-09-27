@@ -1,0 +1,719 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Visit Detail{% endblock %}
+{% block page_title %}Visit Details{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+
+{% if not consultation_paid %}
+<div class="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
+  <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <span class="text-sm font-medium text-amber-800">Payment Pending</span>
+  {% if user.role == 'accountant' or user.role == 'admin' %}
+  <a href="{% url 'payment_create' visit_pk=visit.pk %}" class="ml-auto shrink-0 btn-primary text-xs py-1.5">Record Payment</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="grid grid-cols-3 gap-6">
+  <div class="col-span-1 space-y-4">
+    <div class="card">
+      <h3 class="font-semibold text-slate-800 mb-3">Visit Info</h3>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between"><dt class="text-slate-500">Status</dt><dd><span class="badge {% if visit.status == 'pending' %}badge-yellow{% elif visit.status == 'in_progress' %}badge-blue{% else %}badge-green{% endif %}">{{ visit.get_status_display }}</span></dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">Patient</dt><dd class="font-medium text-slate-800">{{ visit.patient.full_name }}</dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">Doctor</dt><dd class="font-medium text-slate-800">Dr. {{ visit.doctor.get_full_name }}</dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">Created</dt><dd class="text-slate-600">{{ visit.created_at|date:"M d, Y" }}</dd></div>
+      </dl>
+    </div>
+    {% if user.role == 'nurse' %}
+    <div class="card">
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">Nurse Actions</h3>
+      {% if not triage %}
+        <a href="{% url 'triage_create' visit_pk=visit.pk %}" class="btn-primary w-full justify-center">Record Triage</a>
+      {% else %}
+        <div class="badge badge-green w-full justify-center py-2">Triage Completed</div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if user.role == 'doctor' %}
+    <div class="card">
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">Doctor Actions</h3>
+      <div class="space-y-2">
+        {% if not consultation %}
+          <a href="{% url 'consultation_create' visit_pk=visit.pk %}" class="btn-primary w-full justify-center">
+            Start Assessment
+          </a>
+        {% elif not consultation.diagnosis %}
+          <a href="{% url 'consultation_create' visit_pk=visit.pk %}" class="btn-primary w-full justify-center">
+            Continue Assessment
+          </a>
+        {% else %}
+          <div class="badge badge-green w-full justify-center py-2">Consultation Complete</div>
+          <a href="{% url 'consultation_create' visit_pk=visit.pk %}" class="btn-secondary w-full justify-center">Edit Consultation</a>
+        {% endif %}
+        <a href="{% url 'lab_request_create' visit_pk=visit.pk %}" class="btn-secondary w-full justify-center">Request Lab Test</a>
+        {% if not visit.admission %}
+        <a href="{% url 'admission_create' visit_pk=visit.pk %}" class="btn-secondary w-full justify-center">Admit Patient</a>
+        {% else %}
+        <a href="{% url 'patient_discharge' visit_pk=visit.pk %}" class="btn-danger w-full justify-center">Discharge</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% if user.role == 'accountant' or user.role == 'admin' %}
+    <div class="card">
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">Billing</h3>
+      <div class="space-y-2">
+        {% if not consultation_paid %}
+        <a href="{% url 'payment_create' visit_pk=visit.pk %}" class="btn-primary w-full justify-center">Record Consultation Payment</a>
+        {% else %}
+        <div class="badge badge-green w-full justify-center py-2 mb-2">Consultation Paid</div>
+        <a href="{% url 'payment_create' visit_pk=visit.pk %}" class="btn-secondary w-full justify-center">Add Another Payment</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-span-2 space-y-4">
+    <!-- Triage -->
+    {% if triage %}
+    <div class="card">
+      <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span>Triage</h3>
+      <div class="grid grid-cols-3 gap-3 text-sm">
+        {% if triage.temperature %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">Temperature</div><div class="font-semibold text-slate-800">{{ triage.temperature }}°C</div></div>{% endif %}
+        {% if triage.blood_pressure %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">Blood Pressure</div><div class="font-semibold text-slate-800">{{ triage.blood_pressure }}</div></div>{% endif %}
+        {% if triage.pulse_rate %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">Pulse Rate</div><div class="font-semibold text-slate-800">{{ triage.pulse_rate }} bpm</div></div>{% endif %}
+        {% if triage.weight %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">Weight</div><div class="font-semibold text-slate-800">{{ triage.weight }} kg</div></div>{% endif %}
+        {% if triage.height %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">Height</div><div class="font-semibold text-slate-800">{{ triage.height }} cm</div></div>{% endif %}
+        {% if triage.oxygen_saturation %}<div class="bg-slate-50 rounded-lg p-3"><div class="text-slate-500 text-xs">O₂ Saturation</div><div class="font-semibold text-slate-800">{{ triage.oxygen_saturation }}%</div></div>{% endif %}
+      </div>
+      <div class="mt-3 border-t border-slate-100 pt-3">
+        <div class="text-xs text-slate-500 mb-1">Chief Complaint</div>
+        <div class="text-sm text-slate-800">{{ triage.chief_complaint }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Consultation -->
+    {% if consultation %}
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+          <span class="w-2 h-2 bg-blue-500 rounded-full"></span>Assessment — Dr. {{ consultation.doctor.get_full_name }}
+        </h3>
+        {% if user.role == 'doctor' %}
+        <a href="{% url 'consultation_create' visit_pk=visit.pk %}" class="btn-secondary text-xs py-1.5 px-3">Edit</a>
+        {% endif %}
+      </div>
+      <dl class="space-y-4 text-sm">
+
+        {# ── History ───────────────────────────────────────── #}
+        {% if consultation.presenting_complaint or consultation.history or consultation.past_history %}
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+          <div class="bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 uppercase tracking-wider">History</div>
+          <div class="px-4 py-3 space-y-3">
+            {% if consultation.presenting_complaint %}
+            <div>
+              <dt class="text-xs text-slate-500 mb-0.5">Presenting Complaint</dt>
+              <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.presenting_complaint }}</dd>
+            </div>
+            {% endif %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {% if consultation.history %}
+              <div>
+                <dt class="text-xs text-slate-500 mb-0.5">History of Present Illness</dt>
+                <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.history }}</dd>
+              </div>
+              {% endif %}
+              {% if consultation.past_history %}
+              <div>
+                <dt class="text-xs text-slate-500 mb-0.5">Past History</dt>
+                <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.past_history }}</dd>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Physical Examination ──────────────────────────── #}
+        {% if consultation.examination_findings %}
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+          <div class="bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 uppercase tracking-wider">Physical Examination</div>
+          <div class="px-4 py-3">
+            <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.examination_findings }}</dd>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Assessment & Plan ─────────────────────────────── #}
+        {% if consultation.diagnosis or consultation.treatment_plan or consultation.follow_up_notes %}
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+          <div class="bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 uppercase tracking-wider">Assessment &amp; Plan</div>
+          <div class="px-4 py-3 space-y-3">
+            {% if consultation.diagnosis %}
+            <div>
+              <dt class="text-xs text-slate-500 mb-0.5">Diagnosis</dt>
+              <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.diagnosis }}</dd>
+            </div>
+            {% endif %}
+            {% if consultation.treatment_plan %}
+            <div>
+              <dt class="text-xs text-slate-500 mb-0.5">Treatment Plan</dt>
+              <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.treatment_plan }}</dd>
+            </div>
+            {% endif %}
+            {% if consultation.follow_up_notes %}
+            <div>
+              <dt class="text-xs text-slate-500 mb-0.5">Follow-up Notes</dt>
+              <dd class="text-slate-800 whitespace-pre-wrap">{{ consultation.follow_up_notes }}</dd>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Disposition ───────────────────────────────────── #}
+        {% if consultation.admit_patient or consultation.discharge_patient %}
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-slate-500">Disposition:</span>
+          {% if consultation.admit_patient %}
+          <span class="badge badge-blue">Admitted</span>
+          {% elif consultation.discharge_patient %}
+          <span class="badge badge-green">Discharged</span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ── Draft notice ──────────────────────────────────── #}
+        {% if not consultation.diagnosis %}
+        <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Draft — assessment not yet completed
+        </div>
+        {% endif %}
+
+      </dl>
+    </div>
+    {% endif %}
+
+    <!-- Supplies Used -->
+    {% if visit_consumables or user.role == 'nurse' or user.role == 'doctor' %}
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+          <span class="w-2 h-2 bg-orange-400 rounded-full"></span>Supplies &amp; Medication Used
+        </h3>
+        {% if user.role == 'nurse' or user.role == 'doctor' %}
+        <button onclick="document.getElementById('add-supply-modal').classList.remove('hidden')"
+                class="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Add Item
+        </button>
+        {% endif %}
+      </div>
+
+      {% if visit_consumables %}
+      <div class="space-y-2">
+        {% for vc in visit_consumables %}
+        <div class="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3 {% if vc.is_billed %}bg-emerald-50/40{% endif %}">
+          <div class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full shrink-0 {% if vc.is_billed %}bg-emerald-500{% else %}bg-orange-400{% endif %}"></span>
+            <div>
+              <div class="font-medium text-slate-800 text-sm">{{ vc.consumable.name }}</div>
+              <div class="text-xs text-slate-400">
+                {{ vc.consumable.get_category_display }}
+                &nbsp;·&nbsp; qty: {{ vc.quantity }} {{ vc.consumable.unit }}
+                &nbsp;·&nbsp; {{ vc.administered_by.get_full_name|default:"—" }}
+                &nbsp;·&nbsp; {{ vc.created_at|date:"M d, H:i" }}
+              </div>
+              {% if vc.notes %}<div class="text-xs text-slate-400 italic mt-0.5">"{{ vc.notes }}"</div>{% endif %}
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="font-mono text-sm text-slate-600">{{ vc.total_price|floatformat:-2 }}</span>
+            {% if vc.is_billed %}
+            <span class="badge badge-green">Billed</span>
+            {% else %}
+            <span class="badge badge-yellow">Unbilled</span>
+            {% if user.role == 'nurse' or user.role == 'doctor' %}
+            <form id="vc-del-{{ vc.pk }}" method="post" action="{% url 'visit_consumable_remove' visit_pk=visit.pk vc_pk=vc.pk %}" class="inline">
+              {% csrf_token %}
+            </form>
+            <button type="button" class="text-slate-400 hover:text-red-500 transition-colors"
+                    data-confirm-form="vc-del-{{ vc.pk }}"
+                    data-confirm-title="Remove Item"
+                    data-confirm-message="Remove {{ vc.consumable.name }} from this visit?">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            {% endif %}
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-8 text-slate-400 text-sm">
+        No supplies recorded yet.
+        {% if user.role == 'nurse' or user.role == 'doctor' %}
+        Use the "Add Item" button to record administered items.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Add Supply Modal -->
+    {% if user.role == 'nurse' or user.role == 'doctor' %}
+    <div id="add-supply-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('add-supply-modal').classList.add('hidden')"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto z-10">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="font-semibold text-slate-800">Add Supply / Medication</h3>
+          <button onclick="document.getElementById('add-supply-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form method="post" action="{% url 'visit_consumable_add' visit_pk=visit.pk %}" class="px-6 py-5 space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="form-label">Item <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+              <input type="text" id="supply-search" class="form-input pl-9" placeholder="Search item by name or category…" autocomplete="off" />
+              <input type="hidden" name="consumable_id" id="consumable_id" required />
+              <div id="supply-dropdown" class="hidden absolute z-30 mt-2 w-full bg-white border border-slate-100 rounded-xl shadow-xl max-h-72 overflow-y-auto"></div>
+            </div>
+            <div id="selected-supply-chip" class="hidden mt-2 flex items-center justify-between gap-3 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2">
+              <div class="min-w-0">
+                <p id="selected-supply-name" class="text-sm font-semibold text-slate-800 truncate"></p>
+                <p id="selected-supply-meta" class="text-xs text-slate-500 truncate"></p>
+              </div>
+              <button type="button" id="clear-selected-supply" class="text-slate-400 hover:text-red-500 shrink-0">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Quantity <span class="text-red-500">*</span></label>
+              <input name="quantity" type="number" step="0.01" min="0.01" value="1" required class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Notes</label>
+              <input name="notes" class="form-input" placeholder="Optional" />
+            </div>
+          </div>
+          <button type="submit" class="btn-primary w-full justify-center">Record Item</button>
+        </form>
+      </div>
+    </div>
+    {{ consumables_data|json_script:"consumables-data" }}
+    <script>
+    (function() {
+      const dataEl = document.getElementById('consumables-data');
+      if (!dataEl) return;
+      const ITEMS = JSON.parse(dataEl.textContent);
+      const CURRENCY = "{{ currency|escapejs }}";
+
+      const searchInput = document.getElementById('supply-search');
+      const hiddenInput = document.getElementById('consumable_id');
+      const dropdown = document.getElementById('supply-dropdown');
+      const chip = document.getElementById('selected-supply-chip');
+      const chipName = document.getElementById('selected-supply-name');
+      const chipMeta = document.getElementById('selected-supply-meta');
+      const clearChipBtn = document.getElementById('clear-selected-supply');
+
+      function priceLabel(it) {
+        return it.price ? ` — ${new Intl.NumberFormat(undefined, {maximumFractionDigits: 2}).format(it.price)} ${CURRENCY}/${it.unit}` : ` (${it.unit})`;
+      }
+
+      function groupByCategory(list) {
+        const groups = [];
+        const index = {};
+        list.forEach(it => {
+          if (!(it.category in index)) {
+            index[it.category] = { category: it.category, items: [] };
+            groups.push(index[it.category]);
+          }
+          index[it.category].items.push(it);
+        });
+        return groups;
+      }
+
+      function sortedItems() {
+        return ITEMS.slice().sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+      }
+
+      function filterItems(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) return sortedItems();
+        return sortedItems().filter(it => it.name.toLowerCase().includes(q) || it.category.toLowerCase().includes(q));
+      }
+
+      function renderDropdown(list, opts) {
+        opts = opts || {};
+        const searching = !!opts.searching;
+        if (!list.length) {
+          dropdown.innerHTML = '<div class="px-4 py-6 text-sm text-slate-400 text-center">No items found.</div>';
+          dropdown.classList.remove('hidden');
+          return;
+        }
+        const groups = groupByCategory(list);
+        let html = '';
+        groups.forEach((g, gi) => {
+          const groupId = `supply-cat-group-${gi}`;
+          const open = searching;
+          html += `<div class="cat-group">
+            <div class="cat-header px-4 py-2.5 text-xs font-bold text-brand-700 uppercase tracking-wide sticky top-0 bg-brand-50/90 backdrop-blur cursor-pointer flex items-center justify-between hover:bg-brand-100/80 border-b border-brand-100" data-target="${groupId}">
+              <span class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 chevron transition-transform ${open ? 'rotate-90' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                ${g.category}
+              </span>
+              <span class="text-brand-400 normal-case font-medium">${g.items.length} item${g.items.length === 1 ? '' : 's'}</span>
+            </div>
+            <div id="${groupId}" class="cat-body ${open ? '' : 'hidden'}">`;
+          g.items.forEach(it => {
+            html += `<div class="supply-option px-4 py-2.5 pl-8 text-sm hover:bg-brand-50/60 cursor-pointer flex items-center justify-between transition-colors" data-id="${it.id}">
+              <span class="text-slate-700">${it.name}</span>
+              <span class="text-xs text-slate-400 font-mono whitespace-nowrap">${priceLabel(it)}</span>
+            </div>`;
+          });
+          html += `</div></div>`;
+        });
+        dropdown.innerHTML = html;
+        dropdown.classList.remove('hidden');
+        dropdown.querySelectorAll('.cat-header').forEach(el => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const body = document.getElementById(el.dataset.target);
+            const chevron = el.querySelector('.chevron');
+            body.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-90');
+          });
+        });
+        dropdown.querySelectorAll('.supply-option').forEach(el => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectItem(parseInt(el.dataset.id, 10));
+          });
+        });
+      }
+
+      function selectItem(id) {
+        const it = ITEMS.find(x => x.id === id);
+        if (!it) return;
+        hiddenInput.value = it.id;
+        searchInput.value = '';
+        dropdown.classList.add('hidden');
+        chipName.textContent = it.name;
+        chipMeta.textContent = `${it.category}${priceLabel(it)}`;
+        chip.classList.remove('hidden');
+      }
+
+      function clearSelectedItem() {
+        hiddenInput.value = '';
+        chip.classList.add('hidden');
+      }
+
+      searchInput.addEventListener('focus', () => renderDropdown(filterItems(searchInput.value), { searching: !!searchInput.value.trim() }));
+      searchInput.addEventListener('input', () => renderDropdown(filterItems(searchInput.value), { searching: !!searchInput.value.trim() }));
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#supply-search') && !e.target.closest('#supply-dropdown')) {
+          dropdown.classList.add('hidden');
+        }
+      });
+      clearChipBtn.addEventListener('click', clearSelectedItem);
+    })();
+    </script>
+    {% endif %}
+
+    <!-- Lab Requests & Results -->
+    {% if lab_requests %}
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+          <span class="w-2 h-2 bg-violet-500 rounded-full"></span>Lab Tests &amp; Results
+        </h3>
+        {% if lab_requests|length > 1 %}
+        <button type="button" id="view-all-labs-btn"
+                onclick="openAllLabsModal()"
+                class="btn-secondary text-xs py-1.5 px-3 hidden">
+          View All Results
+        </button>
+        {% endif %}
+      </div>
+      <div class="space-y-2">
+        {% for lab in lab_requests %}
+        <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3">
+          <div class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full shrink-0 {% if lab.status == 'completed' %}bg-emerald-500{% elif lab.status == 'in_progress' %}bg-blue-500{% elif lab.status == 'paid' %}bg-yellow-400{% else %}bg-slate-300{% endif %}"></span>
+            <div>
+              <div class="font-semibold text-slate-800 text-sm">{{ lab.test_name }}</div>
+              <div class="text-xs text-slate-400 mt-0.5">
+                {{ lab.created_at|date:"M d, Y H:i" }}
+                &nbsp;·&nbsp;
+                <span class="{% if lab.urgency == 'stat' %}text-red-500 font-semibold{% elif lab.urgency == 'urgent' %}text-amber-500 font-medium{% else %}text-slate-400{% endif %}">{{ lab.get_urgency_display }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            {% if lab.status == 'requested' %}
+              <span class="badge badge-gray">Awaiting Payment</span>
+            {% elif lab.status == 'paid' %}
+              <span class="badge badge-yellow">Awaiting Processing</span>
+            {% elif lab.status == 'in_progress' %}
+              <span class="badge badge-blue">In Progress</span>
+            {% elif lab.status == 'completed' %}
+              <span class="badge badge-green">Completed</span>
+            {% elif lab.status == 'cancelled' %}
+              <span class="badge badge-red">Cancelled</span>
+            {% endif %}
+            {% if lab.result %}
+            <button type="button"
+              onclick="openLabModal('lab-detail-{{ lab.pk }}')"
+              class="btn-primary text-xs py-1.5 px-3 lab-result-btn">
+              View Result
+            </button>
+            {% endif %}
+            {% if lab.status == 'requested' and user.role == 'doctor' or lab.status == 'requested' and user.role == 'admin' %}
+            <form id="lab-cancel-{{ lab.pk }}" method="post" action="{% url 'lab_request_cancel' pk=lab.pk %}" class="inline">
+              {% csrf_token %}
+            </form>
+            <button type="button" class="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-lg px-2.5 py-1.5 transition-colors"
+                    data-confirm-form="lab-cancel-{{ lab.pk }}"
+                    data-confirm-title="Cancel Lab Request"
+                    data-confirm-message="Cancel the request for &quot;{{ lab.test_name|escapejs }}&quot;? This can only be done before payment.">
+              Cancel
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% if lab.result %}
+        <div id="lab-detail-{{ lab.pk }}" class="hidden"
+             data-test-name="{{ lab.test_name|escapejs }}"
+             data-performer="{{ lab.result.performed_by.get_full_name|escapejs }}"
+             data-date="{{ lab.result.created_at|date:"M d, Y H:i"|escapejs }}"
+             data-range="{{ lab.result.reference_range|escapejs }}"
+             data-interp="{{ lab.result.interpretation|escapejs }}"
+             data-file-url="{% if lab.result.result_file %}{{ lab.result.result_file.url|escapejs }}{% endif %}"
+             data-file-name="{% if lab.result.result_file %}{{ lab.result.result_file.name|escapejs }}{% endif %}">
+          {% if lab.result.values.all %}
+          <table class="w-full text-sm">
+            <thead class="text-xs text-slate-500 uppercase">
+              <tr><th class="text-left py-1">Component</th><th class="text-left py-1">Value</th><th class="text-left py-1">Reference Range</th></tr>
+            </thead>
+            <tbody>
+              {% for v in lab.result.values.all %}
+              <tr class="border-t border-slate-100 {% if v.is_abnormal %}bg-red-50{% endif %}">
+                <td class="py-1.5 font-medium text-slate-700">{{ v.parameter.name }}</td>
+                <td class="py-1.5 {% if v.is_abnormal %}text-red-600 font-semibold{% else %}text-slate-700{% endif %}">{{ v.value }}{% if v.parameter.unit %} {{ v.parameter.unit }}{% endif %}{% if v.is_abnormal %} ⚠{% endif %}</td>
+                <td class="py-1.5 text-slate-500 text-xs">{{ v.parameter.reference_range|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if lab.result.result_text %}
+          <p class="text-sm text-slate-700 whitespace-pre-wrap mt-3 pt-3 border-t border-slate-100">{{ lab.result.result_text }}</p>
+          {% endif %}
+          {% else %}
+          <p class="text-sm text-slate-800 whitespace-pre-wrap">{{ lab.result.result_text }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- All Labs Combined Modal -->
+    <div id="all-labs-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeAllLabsModal()"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto z-10 flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+          <h3 class="font-semibold text-slate-800">All Lab Results</h3>
+          <button onclick="closeAllLabsModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div id="all-labs-body" class="px-6 py-5 space-y-6 overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- Lab Result Modal -->
+    <div id="lab-result-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeLabModal()"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto z-10">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="font-semibold text-slate-800" id="modal-test-name">Lab Result</h3>
+          <button onclick="closeLabModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Result</div>
+            <div id="modal-result" class="text-sm text-slate-800 bg-slate-50 rounded-lg p-3"></div>
+          </div>
+          <div id="modal-range-wrap">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Reference Range</div>
+            <div id="modal-range" class="text-sm text-slate-700 bg-slate-50 rounded-lg p-3"></div>
+          </div>
+          <div id="modal-interp-wrap">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Interpretation</div>
+            <div id="modal-interp" class="text-sm text-slate-700 bg-blue-50 border border-blue-100 rounded-lg p-3"></div>
+          </div>
+          <div id="modal-file-wrap" class="hidden">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Attached File</div>
+            <div id="modal-file-preview" class="mb-2 hidden">
+              <img id="modal-file-img" src="" alt="Lab result" class="rounded-lg max-h-64 w-full object-contain border border-slate-200 bg-slate-50" />
+            </div>
+            <a id="modal-file-link" href="#" target="_blank"
+               class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+              <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span id="modal-file-name">Download File</span>
+            </a>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100">
+            <span>Performed by: <span id="modal-performer" class="font-medium text-slate-600"></span></span>
+            <span id="modal-date"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openLabModal(detailId) {
+  const detail = document.getElementById(detailId);
+  if (!detail) return;
+
+  const testName = detail.dataset.testName;
+  const refRange = detail.dataset.range;
+  const interpretation = detail.dataset.interp;
+  const performer = detail.dataset.performer;
+  const date = detail.dataset.date;
+  const fileUrl = detail.dataset.fileUrl;
+  const fileName = detail.dataset.fileName;
+
+  document.getElementById('modal-test-name').textContent = testName;
+  document.getElementById('modal-result').innerHTML = detail.innerHTML;
+  document.getElementById('modal-performer').textContent = performer;
+  document.getElementById('modal-date').textContent = date;
+
+  const rangeWrap = document.getElementById('modal-range-wrap');
+  if (refRange) {
+    document.getElementById('modal-range').textContent = refRange;
+    rangeWrap.classList.remove('hidden');
+  } else {
+    rangeWrap.classList.add('hidden');
+  }
+
+  const interpWrap = document.getElementById('modal-interp-wrap');
+  if (interpretation) {
+    document.getElementById('modal-interp').textContent = interpretation;
+    interpWrap.classList.remove('hidden');
+  } else {
+    interpWrap.classList.add('hidden');
+  }
+
+  const fileWrap = document.getElementById('modal-file-wrap');
+  if (fileUrl) {
+    const shortName = fileName ? fileName.split('/').pop() : 'Download File';
+    document.getElementById('modal-file-link').href = fileUrl;
+    document.getElementById('modal-file-name').textContent = shortName;
+    const imgWrap = document.getElementById('modal-file-preview');
+    const img = document.getElementById('modal-file-img');
+    const ext = shortName.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+      img.src = fileUrl;
+      imgWrap.classList.remove('hidden');
+    } else {
+      imgWrap.classList.add('hidden');
+    }
+    fileWrap.classList.remove('hidden');
+  } else {
+    fileWrap.classList.add('hidden');
+  }
+
+  const modal = document.getElementById('lab-result-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.classList.add('overflow-hidden');
+}
+
+function closeLabModal() {
+  const modal = document.getElementById('lab-result-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.classList.remove('overflow-hidden');
+}
+
+// ── View All Results ──────────────────────────────────────────
+function openAllLabsModal() {
+  const body = document.getElementById('all-labs-body');
+  body.innerHTML = '';
+  // Collect all hidden detail divs that have result data
+  document.querySelectorAll('[id^="lab-detail-"]').forEach(function(detail) {
+    const section = document.createElement('div');
+    section.className = 'border border-slate-200 rounded-xl p-4';
+    const testName = detail.dataset.testName;
+    const performer = detail.dataset.performer;
+    const date = detail.dataset.date;
+    const refRange = detail.dataset.range;
+    const interp = detail.dataset.interp;
+    const fileUrl = detail.dataset.fileUrl;
+    const fileName = detail.dataset.fileName;
+
+    let html = `<div class="flex items-center justify-between mb-3">
+      <span class="font-semibold text-slate-800">${testName}</span>
+      <span class="text-xs text-slate-400">${date}</span>
+    </div>`;
+    html += `<div class="text-sm text-slate-800 bg-slate-50 rounded-lg p-3 mb-2">${detail.innerHTML || '—'}</div>`;
+    if (refRange) html += `<div class="text-xs text-slate-500 mt-1"><span class="font-medium">Reference Range:</span> ${refRange}</div>`;
+    if (interp)   html += `<div class="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-2">${interp}</div>`;
+    if (fileUrl) {
+      const short = fileName ? fileName.split('/').pop() : 'Download File';
+      html += `<a href="${fileUrl}" target="_blank" class="inline-flex items-center gap-1.5 mt-3 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-1.5 transition-colors">📎 ${short}</a>`;
+    }
+    html += `<div class="text-xs text-slate-400 mt-3 pt-2 border-t border-slate-100">Performed by: <span class="font-medium text-slate-600">${performer}</span></div>`;
+    section.innerHTML = html;
+    body.appendChild(section);
+  });
+
+  if (!body.children.length) {
+    body.innerHTML = '<p class="text-slate-400 text-sm text-center py-8">No completed results yet.</p>';
+  }
+
+  const modal = document.getElementById('all-labs-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.classList.add('overflow-hidden');
+}
+
+function closeAllLabsModal() {
+  const modal = document.getElementById('all-labs-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.classList.remove('overflow-hidden');
+}
+
+// Show "View All Results" button when ≥2 result buttons exist
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.querySelectorAll('.lab-result-btn').length >= 2) {
+    const btn = document.getElementById('view-all-labs-btn');
+    if (btn) btn.classList.remove('hidden');
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeLabModal(); closeAllLabsModal(); }
+});
+</script>
+{% endblock %}

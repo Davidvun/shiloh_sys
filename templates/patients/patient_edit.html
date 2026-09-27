@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Edit Patient{% endblock %}
+{% block page_title %}Edit Patient{% endblock %}
+{% block page_subtitle %}{{ patient.full_name }} &mdash; {{ patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+<div class="card">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div><label class="form-label">Full Name</label><input name="full_name" value="{{ patient.full_name }}" required class="form-input" /></div>
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="form-label">Age</label><input type="number" name="age" value="{{ patient.age }}" required class="form-input" /></div>
+      <div><label class="form-label">Gender</label>
+        <select name="gender" class="form-input">
+          <option value="M" {% if patient.gender == 'M' %}selected{% endif %}>Male</option>
+          <option value="F" {% if patient.gender == 'F' %}selected{% endif %}>Female</option>
+          <option value="O" {% if patient.gender == 'O' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+    </div>
+    <div><label class="form-label">Phone</label><input name="phone" value="{{ patient.phone }}" class="form-input" /></div>
+    <div><label class="form-label">Address</label><textarea name="address" class="form-input" rows="2">{{ patient.address }}</textarea></div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">Save Changes</button>
+      <a href="{% url 'patient_detail' pk=patient.pk %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

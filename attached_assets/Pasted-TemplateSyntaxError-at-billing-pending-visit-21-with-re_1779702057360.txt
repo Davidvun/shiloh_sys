@@ -1,0 +1,84 @@
+TemplateSyntaxError at /billing/pending/visit/21/
+'with' received an invalid token: 'paid_consultation'
+Request Method:	GET
+Request URL:	http://d2dc6266-195f-4a99-b1e0-c85e961471da-00-1cbnd5em6d4vv.worf.replit.dev/billing/pending/visit/21/
+Django Version:	5.2.14
+Exception Type:	TemplateSyntaxError
+Exception Value:	
+'with' received an invalid token: 'paid_consultation'
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/defaulttags.py, line 1537, in do_with
+Raised during:	billing.views.pending_billing_visit
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.12.12
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/y50fwh2sha400s38m12psfxpvk2c8w39-sitecustomize/lib/python/site-packages',
+ '/nix/store/3idd141l4qkq2s4b1jqwfahmzf739yyb-python3.12-pip-25.0.1/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python312.zip',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/iizfzmqjdfvbyx82gqw92glb5zl6m4my-python3-3.12.12/lib/python3.12/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages',
+ '/nix/store/y9isj47l7a4i7ycp7njnbgrv7c1kyziv-python3.12-setuptools-80.9.0/lib/python3.12/site-packages']
+Server time:	Mon, 25 May 2026 11:40:32 +0200
+Error during template rendering
+In template /home/runner/workspace/templates/billing/pending_billing_visit.html, error at line 22
+
+'with' received an invalid token: 'paid_consultation'
+12	<div class="card mb-6">
+13	  <h2 class="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Visit Summary</h2>
+14	  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+15	    <div><dt class="text-slate-400 text-xs mb-0.5">Patient</dt><dd class="font-semibold text-slate-800">{{ visit.patient.full_name }}</dd></div>
+16	    <div><dt class="text-slate-400 text-xs mb-0.5">Patient ID</dt><dd class="font-mono text-blue-600">{{ visit.patient.patient_id }}</dd></div>
+17	    <div><dt class="text-slate-400 text-xs mb-0.5">Doctor</dt><dd class="text-slate-700">{% if visit.doctor %}Dr. {{ visit.doctor.get_full_name }}{% else %}—{% endif %}</dd></div>
+18	    <div><dt class="text-slate-400 text-xs mb-0.5">Visit Status</dt><dd><span class="badge {% if visit.status == 'pending' %}badge-yellow{% elif visit.status == 'in_progress' %}badge-blue{% else %}badge-green{% endif %}">{{ visit.get_status_display }}</span></dd></div>
+19	  </dl>
+20	</div>
+21	
+22	{% with has_pending_consult=not paid_consultation has_pending_labs=unpaid_labs|length has_pending_supplies=unbilled_supplies|length %}
+23	{% with multi_pending=has_pending_labs|add:has_pending_supplies %}
+24	
+25	{# ─── PAY ALL TOGETHER (shown when there are 2+ types of outstanding charges) ─── #}
+26	{% if not paid_consultation or unpaid_labs or unbilled_supplies %}
+27	{% if unpaid_labs or unbilled_supplies %}
+28	
+29	<div class="card border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 mb-6" id="pay-all-card">
+30	  <div class="flex items-center justify-between mb-4">
+31	    <div class="flex items-center gap-3">
+32	      <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow">
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/core/handlers/base.py, line 197, in _get_response
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/core/decorators.py, line 15, in wrapped
+            return view_func(request, *args, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/billing/views.py, line 622, in pending_billing_visit
+    return render(request, 'billing/pending_billing_visit.html', {
+                 …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/shortcuts.py, line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/loader.py, line 61, in render_to_string
+        template = get_template(template_name, using=using)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/loader.py, line 15, in get_template
+            return engine.get_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/backends/django.py, line 79, in get_template
+            return Template(self.engine.get_template(template_name), self)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/django/template/engine.py, line 177, in get_template
+        template, origin = self.find_te

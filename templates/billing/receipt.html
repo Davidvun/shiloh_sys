@@ -1,0 +1,241 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receipt {{ payment.receipt_number }} — {{ hospital_settings.hospital_name|default:"Hospital" }}</title>
+  {% if hospital_settings.logo %}
+  <link rel="icon" type="image/png" href="{{ hospital_settings.logo.url }}" />
+  {% endif %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'sans-serif'], mono: ['DM Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      .receipt-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 flex flex-col items-center justify-start py-10 px-4">
+
+  <!-- Action Bar (hidden on print) -->
+  <div class="no-print w-full max-w-xl mb-4 flex items-center justify-between">
+    <a href="{% url 'payment_list' %}"
+       class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-sm transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back to Payments
+    </a>
+    <button onclick="window.print()"
+            class="inline-flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-sm transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      Print Receipt
+    </button>
+  </div>
+
+  <!-- Receipt Card -->
+  <div class="receipt-card w-full max-w-xl bg-white rounded-2xl shadow-lg border {% if payment.status == 'paid' %}border-emerald-200{% else %}border-amber-200{% endif %} overflow-hidden">
+
+    <!-- Colored top stripe -->
+    <div class="h-1.5 {% if payment.status == 'paid' %}bg-emerald-500{% else %}bg-amber-400{% endif %}"></div>
+
+    <div class="p-8">
+
+      <!-- Hospital Header -->
+      <div class="flex items-center justify-between pb-5 mb-5 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          {% if hospital_settings.logo %}
+          <img src="{{ hospital_settings.logo.url }}" alt="{{ hospital_settings.hospital_name }} logo"
+               class="h-20 w-20 object-contain rounded-xl border border-slate-100 bg-slate-50 p-0.5" />
+          {% else %}
+          <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow">
+            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m-8-8h16"/></svg>
+          </div>
+          {% endif %}
+          <div>
+            <div class="font-bold text-slate-800 text-base leading-tight">{{ hospital_settings.hospital_name|default:"Hospital" }}</div>
+            <div class="text-xs text-slate-400 mt-0.5">Official Receipt</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-mono font-bold text-slate-800 text-sm">{{ payment.receipt_number }}</div>
+          <div class="text-xs text-slate-400 mt-0.5">{{ payment.created_at|date:"d M Y, H:i" }}</div>
+        </div>
+      </div>
+
+      <!-- Status Badge -->
+      <div class="mb-5">
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full
+          {% if payment.status == 'paid' %}bg-emerald-100 text-emerald-700
+          {% elif payment.status == 'pending' %}bg-amber-100 text-amber-700
+          {% else %}bg-slate-100 text-slate-500{% endif %}">
+          {% if payment.status == 'paid' %}
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          {% else %}
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+          {% endif %}
+          {{ payment.get_status_display }}
+        </span>
+      </div>
+
+      <!-- Patient Details -->
+      <div class="bg-slate-50 rounded-xl p-4 mb-5">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Patient Information</div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div class="text-slate-400 text-xs mb-0.5">Full Name</div>
+            <div class="font-semibold text-slate-800">{{ payment.visit.patient.full_name }}</div>
+          </div>
+          <div>
+            <div class="text-slate-400 text-xs mb-0.5">Patient ID</div>
+            <div class="font-mono text-blue-600 font-medium">{{ payment.visit.patient.patient_id }}</div>
+          </div>
+          {% if payment.payment_type != 'combined' %}
+          <div>
+            <div class="text-slate-400 text-xs mb-0.5">Payment Type</div>
+            <div class="font-medium text-slate-700">{{ payment.get_payment_type_display }}</div>
+          </div>
+          {% endif %}
+          <div>
+            <div class="text-slate-400 text-xs mb-0.5">Payment Method</div>
+            <div class="font-medium text-slate-700">{{ payment.get_payment_method_display }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined payment: itemised line items -->
+      {% if payment.payment_type == 'combined' and combined_line_items %}
+      <div class="border border-slate-100 rounded-xl overflow-hidden mb-5">
+        <div class="bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+          Items Included
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for item in combined_line_items %}
+          <div class="flex justify-between items-center px-4 py-3 text-sm">
+            <div>
+              <span class="font-medium text-slate-800">{{ item.label }}</span>
+              {% if item.detail %}<span class="text-xs text-slate-400 ml-2">{{ item.detail }}</span>{% endif %}
+            </div>
+            <span class="font-mono text-slate-700">
+              {% if item.amount is not None %}{{ item.amount|floatformat:-2 }} {{ currency }}{% else %}—{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Amount Breakdown -->
+      <div class="border border-slate-100 rounded-xl overflow-hidden mb-5">
+        <div class="bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+          Payment Breakdown
+        </div>
+        <div class="divide-y divide-slate-100">
+          <div class="flex justify-between items-center px-4 py-3 text-sm">
+            <span class="text-slate-600">Total Amount</span>
+            <span class="font-mono font-medium text-slate-800">{{ payment.total_amount|floatformat:-2 }} {{ currency }}</span>
+          </div>
+          {% if payment.visit.patient.insurance %}
+          <div class="flex justify-between items-center px-4 py-3 text-sm">
+            <span class="text-emerald-700">Insurance ({{ payment.visit.patient.insurance.name }})</span>
+            <span class="font-mono text-emerald-700">− {{ payment.insurance_covered|floatformat:-2 }} {{ currency }}</span>
+          </div>
+          {% endif %}
+          <div class="flex justify-between items-center px-4 py-3 bg-blue-50">
+            <span class="font-bold text-slate-800">Patient Pays</span>
+            <span class="font-mono font-bold text-blue-700 text-lg">{{ payment.patient_pays|floatformat:-2 }} {{ currency }}</span>
+          </div>
+          {% if payment.status == 'paid' %}
+          <div class="flex justify-between items-center px-4 py-3 text-sm">
+            <span class="text-emerald-700 font-medium">Amount Paid</span>
+            <span class="font-mono font-semibold text-emerald-700">{{ payment.amount_paid|floatformat:-2 }} {{ currency }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center pt-4 border-t border-slate-100">
+        <p class="text-xs text-slate-400">Thank you for choosing {{ hospital_settings.hospital_name|default:"our hospital" }}.</p>
+        <p class="text-xs text-slate-300 mt-1">This is an official receipt. Please retain for your records.</p>
+      </div>
+
+    </div>
+
+    <!-- Compact tear-off copy for the patient -->
+    <div class="patient-copy border-t-2 border-dashed border-slate-300 bg-slate-50 px-8 py-6">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          {% if hospital_settings.logo %}
+          <img src="{{ hospital_settings.logo.url }}" alt="{{ hospital_settings.hospital_name }} logo"
+               class="h-10 w-10 object-contain rounded-lg border border-slate-200 bg-white p-0.5" />
+          {% else %}
+          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m-8-8h16"/></svg>
+          </div>
+          {% endif %}
+          <div>
+            <div class="font-semibold text-slate-800">{{ hospital_settings.hospital_name|default:"Hospital" }}</div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-1">Patient Copy</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-400">Brief payment record</div>
+          <div class="font-mono text-xs font-semibold text-slate-700 mt-1">{{ payment.receipt_number }}</div>
+          <div class="text-xs text-slate-400 mt-1">{{ payment.created_at|date:"d M Y, H:i" }}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
+        <div>
+          <div class="text-xs text-slate-400">Patient</div>
+          <div class="font-semibold text-slate-800">{{ payment.visit.patient.full_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">Patient ID</div>
+          <div class="font-mono text-slate-700">{{ payment.visit.patient.patient_id }}</div>
+        </div>
+      </div>
+
+      <div class="border border-slate-200 rounded-lg overflow-hidden mt-4">
+        <div class="bg-white px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+          Payment Summary
+        </div>
+        <div class="divide-y divide-slate-200">
+          {% for item in patient_copy_items %}
+          <div class="flex justify-between items-center px-3 py-2 text-sm">
+            <span class="text-slate-600">{{ item.label }}</span>
+            <span class="font-mono text-slate-800">{{ item.amount|floatformat:-2 }} {{ currency }}</span>
+          </div>
+          {% endfor %}
+          <div class="flex justify-between items-center px-3 py-2.5 bg-blue-50">
+            <span class="font-bold text-slate-800">Total</span>
+            <span class="font-mono font-bold text-blue-700">{{ payment.patient_pays|floatformat:-2 }} {{ currency }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mt-3 text-xs">
+        <span class="text-slate-500">Payment method: <span class="font-medium text-slate-700">{{ payment.get_payment_method_display }}</span></span>
+        <span class="font-medium {% if payment.status == 'paid' %}text-emerald-700{% else %}text-amber-700{% endif %}">{{ payment.get_status_display }}</span>
+      </div>
+
+      <div class="text-center border-t border-slate-200 mt-4 pt-3">
+        <p class="text-xs text-slate-500">Keep this copy for your records.</p>
+        <p class="text-[11px] text-slate-400 mt-1">{{ hospital_settings.hospital_name|default:"Hospital" }}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

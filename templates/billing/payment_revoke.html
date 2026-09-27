@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Revoke Payment{% endblock %}
+{% block page_title %}Revoke Payment{% endblock %}
+{% block page_subtitle %}{{ payment.receipt_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+
+  <!-- Payment summary -->
+  <div class="card mb-5">
+    <h3 class="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wider">Payment Details</h3>
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+      <dt class="text-slate-500">Receipt</dt>
+      <dd class="font-mono font-semibold text-brand-700">{{ payment.receipt_number }}</dd>
+      <dt class="text-slate-500">Patient</dt>
+      <dd class="font-medium text-slate-800">{{ payment.visit.patient.full_name }}</dd>
+      <dt class="text-slate-500">Type</dt>
+      <dd class="text-slate-700">{{ payment.get_payment_type_display }}</dd>
+      <dt class="text-slate-500">Amount Paid</dt>
+      <dd class="font-semibold text-slate-800">{{ payment.patient_pays|floatformat:-2 }} {{ currency }}</dd>
+      <dt class="text-slate-500">Processed By</dt>
+      <dd class="text-slate-700">{{ payment.processed_by.get_full_name }}</dd>
+      <dt class="text-slate-500">Date</dt>
+      <dd class="text-slate-500">{{ payment.created_at|date:"M d, Y  H:i" }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <!-- Action choice -->
+      <div>
+        <label class="form-label mb-2">What should happen to this payment? <span class="text-red-500">*</span></label>
+        <div class="space-y-3">
+
+          <label id="lbl-queue" class="flex items-start gap-3 p-4 border-2 border-slate-200 rounded-xl cursor-pointer transition-all has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50">
+            <input type="radio" name="revoke_action" value="return_to_queue" class="mt-0.5 accent-amber-500" required />
+            <div>
+              <div class="text-sm font-semibold text-slate-800">Return to payment queue</div>
+              <div class="text-xs text-slate-500 mt-0.5">The payment is reset to <span class="font-medium text-amber-600">Pending</span> so it can be reviewed and re-approved. The receipt stays on record.</div>
+            </div>
+          </label>
+
+          <label id="lbl-delete" class="flex items-start gap-3 p-4 border-2 border-slate-200 rounded-xl cursor-pointer transition-all has-[:checked]:border-red-400 has-[:checked]:bg-red-50">
+            <input type="radio" name="revoke_action" value="delete" class="mt-0.5 accent-red-500" />
+            <div>
+              <div class="text-sm font-semibold text-slate-800">Delete the payment completely</div>
+              <div class="text-xs text-slate-500 mt-0.5">The payment is marked <span class="font-medium text-red-600">Revoked</span> and removed from active records. Only visible in audit logs. <span class="font-semibold">This cannot be undone.</span></div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div>
+        <label class="form-label">Reason <span class="text-red-500">*</span></label>
+        <textarea name="reason" required rows="3" autofocus
+                  class="form-input" placeholder="Explain why this payment is being revoked…"></textarea>
+      </div>
+
+      <div class="flex gap-3 pt-1">
+        <button type="submit" id="submitBtn"
+                class="bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2 rounded-xl text-sm transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+          </svg>
+          <span id="submitLabel">Confirm Revocation</span>
+        </button>
+        <a href="{% url 'payment_list' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const radios = document.querySelectorAll('input[name="revoke_action"]');
+  const submitLabel = document.getElementById('submitLabel');
+  const submitBtn = document.getElementById('submitBtn');
+
+  const labels = {
+    'return_to_queue': 'Return to Queue',
+    'delete': 'Delete Payment'
+  };
+  const colours = {
+    'return_to_queue': ['bg-amber-500', 'hover:bg-amber-600', 'bg-red-600', 'hover:bg-red-700'],
+    'delete':          ['bg-red-600',   'hover:bg-red-700',   'bg-amber-500', 'hover:bg-amber-600'],
+  };
+
+  radios.forEach(r => {
+    r.addEventListener('change', () => {
+      submitLabel.textContent = labels[r.value] || 'Confirm Revocation';
+      const [addA, addB, remA, remB] = colours[r.value];
+      submitBtn.classList.remove(remA, remB);
+      submitBtn.classList.add(addA, addB);
+    });
+  });
+})();
+</script>
+{% endblock %}

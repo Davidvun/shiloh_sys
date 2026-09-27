@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ action }} User{% endblock %}
+{% block page_title %}{{ action }} User{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+<div class="card">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="form-label">First Name <span class="text-red-500">*</span></label><input name="first_name" value="{{ obj.first_name|default:'' }}" required class="form-input" /></div>
+      <div><label class="form-label">Last Name <span class="text-red-500">*</span></label><input name="last_name" value="{{ obj.last_name|default:'' }}" required class="form-input" /></div>
+    </div>
+    <div><label class="form-label">Username <span class="text-red-500">*</span></label><input name="username" value="{{ obj.username|default:'' }}" required {% if obj %}readonly class="form-input bg-slate-50"{% else %}class="form-input"{% endif %} /></div>
+    <div><label class="form-label">Email</label><input type="email" name="email" value="{{ obj.email|default:'' }}" class="form-input" /></div>
+    <div><label class="form-label">Phone</label><input name="phone" value="{{ obj.phone|default:'' }}" class="form-input" /></div>
+
+    <div>
+      <label class="form-label">Role <span class="text-red-500">*</span></label>
+      <select name="role" id="roleSelect" required class="form-input">
+        {% for val, label in roles %}
+        <option value="{{ val }}" {% if obj.role == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div id="specialtyRow" class="{% if obj.role != 'doctor' %}hidden{% endif %}">
+      <label class="form-label">Specialty</label>
+      <select name="specialty" id="specialtySelect" class="form-input">
+        <option value="">— Select specialty —</option>
+        {% for val, label in specialties %}
+        <option value="{{ val }}" {% if obj.specialty == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <p class="mt-1 text-xs text-slate-400">Only shown when role is Doctor.</p>
+    </div>
+
+    {% if not obj %}
+    <div><label class="form-label">Password <span class="text-red-500">*</span></label><input type="password" name="password" required minlength="8" class="form-input" placeholder="Min. 8 characters — user will change this on first login" /></div>
+    {% endif %}
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-primary">{{ action }} User</button>
+      <a href="{% url 'user_list' %}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+
+<script>
+(function () {
+  const roleSelect = document.getElementById('roleSelect');
+  const specialtyRow = document.getElementById('specialtyRow');
+  const specialtySelect = document.getElementById('specialtySelect');
+
+  function toggleSpecialty() {
+    if (roleSelect.value === 'doctor') {
+      specialtyRow.classList.remove('hidden');
+    } else {
+      specialtyRow.classList.add('hidden');
+      specialtySelect.value = '';
+    }
+  }
+
+  roleSelect.addEventListener('change', toggleSpecialty);
+  toggleSpecialty();
+})();
+</script>
+{% endblock %}

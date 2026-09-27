@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Lab Test Catalog{% endblock %}
+{% block page_title %}Lab Test Catalog{% endblock %}
+{% block page_subtitle %}Manage test categories, tests and their parameters{% endblock %}
+
+{% block content %}
+{# ── Stats bar ─────────────────────────────────────────────── #}
+{% with total_tests=0 active_tests=0 %}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  {# count via template — categories queryset already prefetched #}
+  {% with cat_count=categories|length %}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+    <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+    </div>
+    <div>
+      <p class="text-2xl font-bold text-slate-800">{{ cat_count }}</p>
+      <p class="text-xs text-slate-500 mt-0.5">Categories</p>
+    </div>
+  </div>
+  {% endwith %}
+
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+    <div class="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    </div>
+    <div>
+      <p class="text-2xl font-bold text-slate-800" id="stat-total">—</p>
+      <p class="text-xs text-slate-500 mt-0.5">Total Tests</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+    <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div>
+      <p class="text-2xl font-bold text-slate-800" id="stat-active">—</p>
+      <p class="text-xs text-slate-500 mt-0.5">Active Tests</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+    <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div>
+      <p class="text-2xl font-bold text-slate-800" id="stat-priced">—</p>
+      <p class="text-xs text-slate-500 mt-0.5">With Price</p>
+    </div>
+  </div>
+</div>
+
+{# ── Action panels ─────────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+
+  {# Add Category #}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      </div>
+      <h3 class="font-semibold text-slate-800 text-sm">New Category</h3>
+    </div>
+    <div class="px-5 py-4">
+      <form method="post" action="{% url 'lab_category_create' %}" class="space-y-3">
+        {% csrf_token %}
+        <input name="name" required class="form-input" placeholder="e.g. RADIOLOGY" />
+        <button class="btn-primary w-full justify-center">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Add Category
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# Add Test #}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-brand-100 flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      </div>
+      <h3 class="font-semibold text-slate-800 text-sm">New Test</h3>
+    </div>
+    <div class="px-5 py-4">
+      <form method="post" action="{% url 'lab_test_create' %}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        {% csrf_token %}
+        <div class="sm:col-span-3">
+          <label class="form-label text-xs">Category</label>
+          <select name="category" required class="form-input">
+            <option value="">— Select —</option>
+            {% for c in categories %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="sm:col-span-6">
+          <label class="form-label text-xs">Test Name</label>
+          <input name="name" required class="form-input" placeholder="e.g. Full Blood Count" />
+        </div>
+        <div class="sm:col-span-3">
+          <label class="form-label text-xs">Price ({{ currency }})</label>
+          <input name="default_price" type="number" step="0.01" min="0" class="form-input" placeholder="0.00" />
+        </div>
+        <div class="sm:col-span-12">
+          <button class="btn-primary w-full justify-center">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Test
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── Search & toolbar ──────────────────────────────────────── #}
+<div class="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-5">
+  <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+    <div class="relative flex-1 w-full">
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+      <input type="text" id="catalog-search" class="form-input pl-9 pr-10" placeholder="Search tests or parameters…" autocomplete="off" />
+      <button id="clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span id="search-summary" class="text-xs text-slate-500 mr-1"></span>
+      <button type="button" id="expand-all" class="btn-secondary text-xs py-1.5 px-3">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        Expand all
+      </button>
+      <button type="button" id="collapse-all" class="btn-secondary text-xs py-1.5 px-3">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+        Collapse all
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Catalog list ──────────────────────────────────────────── #}
+<div class="space-y-4" id="catalog-list">
+  {% for cat in categories %}
+  <details class="cat-card group bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-cat-name="{{ cat.name|lower }}">
+
+    {# Category header #}
+    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none list-none hover:bg-slate-50/60 transition-colors">
+      <div class="flex items-center gap-3 min-w-0">
+        {# Animated chevron #}
+        <div class="w-7 h-7 rounded-lg bg-slate-100 group-open:bg-brand-100 flex items-center justify-center transition-colors shrink-0">
+          <svg class="w-3.5 h-3.5 text-slate-400 group-open:text-brand-600 chevron transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h3 class="font-bold text-slate-800 text-sm truncate">{{ cat.name }}</h3>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs text-slate-500 test-count">{{ cat.tests.count }} test{{ cat.tests.count|pluralize }}</span>
+            {% with active_count=cat.tests.all|length %}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0 ml-3" onclick="event.stopPropagation()">
+        <span class="badge {% if cat.is_active %}badge-green{% else %}badge-gray{% endif %}">
+          {% if cat.is_active %}Active{% else %}Disabled{% endif %}
+        </span>
+        <a href="{% url 'lab_category_toggle' pk=cat.pk %}"
+           class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors
+                  {% if cat.is_active %}border-slate-200 text-slate-600 hover:bg-slate-100{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
+          {% if cat.is_active %}Disable{% else %}Enable{% endif %}
+        </a>
+        <form id="cat-del-{{ cat.pk }}" method="post" action="{% url 'lab_category_delete' pk=cat.pk %}" class="inline">
+          {% csrf_token %}
+        </form>
+        <button type="button"
+                class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                data-confirm-form="cat-del-{{ cat.pk }}"
+                data-confirm-title="Delete Category"
+                data-confirm-message="Delete &quot;{{ cat.name|escapejs }}&quot; and all its tests? This cannot be undone.">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete
+        </button>
+      </div>
+    </summary>
+
+    {# Category body #}
+    <div class="border-t border-slate-100">
+      {% if cat.tests.all %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50/80">
+              <th class="text-left px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Test Name</th>
+              <th class="text-left px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Parameters</th>
+              <th class="text-right px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Price ({{ currency }})</th>
+              <th class="text-center px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+              <th class="text-right px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for t in cat.tests.all %}
+            <tr class="test-row hover:bg-blue-50/30 transition-colors"
+                data-test-name="{{ t.name|lower }}"
+                data-params="{% for p in t.parameters.all %}{{ p.name|lower }}|{% endfor %}">
+
+              {# Name #}
+              <td class="px-5 py-3 font-medium text-slate-800">{{ t.name }}</td>
+
+              {# Parameters toggle #}
+              <td class="px-3 py-3">
+                {% if t.parameters.all %}
+                <button type="button"
+                        class="components-toggle inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-full transition-colors"
+                        data-target="components-{{ t.pk }}">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16"/></svg>
+                  {{ t.parameters.count }} param{{ t.parameters.count|pluralize }}
+                </button>
+                {% else %}
+                <button type="button"
+                        class="components-toggle inline-flex items-center gap-1 text-xs text-slate-400 hover:text-brand-600 hover:bg-brand-50 px-2.5 py-1 rounded-full transition-colors border border-dashed border-slate-300 hover:border-brand-300"
+                        data-target="components-{{ t.pk }}">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Add params
+                </button>
+                {% endif %}
+              </td>
+
+              {# Price #}
+              <td class="px-3 py-3 text-right">
+                {% if t.default_price and t.default_price > 0 %}
+                <span class="inline-flex items-center font-mono text-sm font-semibold text-slate-700 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200">
+                  {{ t.default_price|floatformat:2 }}
+                </span>
+                {% else %}
+                <span class="text-slate-300 text-xs font-mono">—</span>
+                {% endif %}
+              </td>
+
+              {# Status #}
+              <td class="px-3 py-3 text-center">
+                <span class="badge {% if t.is_active %}badge-green{% else %}badge-gray{% endif %}">
+                  {% if t.is_active %}Active{% else %}Off{% endif %}
+                </span>
+              </td>
+
+              {# Actions #}
+              <td class="px-5 py-3 text-right whitespace-nowrap">
+                <div class="inline-flex items-center gap-1">
+                  {# Edit #}
+                  <a href="{% url 'lab_test_edit' pk=t.pk %}"
+                     class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                     title="Edit">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </a>
+                  {# Toggle #}
+                  <a href="{% url 'lab_test_toggle' pk=t.pk %}"
+                     class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors
+                            {% if t.is_active %}text-amber-500 hover:text-amber-700 hover:bg-amber-50{% else %}text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50{% endif %}"
+                     title="{% if t.is_active %}Disable{% else %}Enable{% endif %}">
+                    {% if t.is_active %}
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                    {% else %}
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% endif %}
+                  </a>
+                  {# Delete #}
+                  <form id="test-del-{{ t.pk }}" method="post" action="{% url 'lab_test_delete' pk=t.pk %}" class="inline">
+                    {% csrf_token %}
+                  </form>
+                  <button type="button"
+                          class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          data-confirm-form="test-del-{{ t.pk }}"
+                          data-confirm-title="Delete Test"
+                          data-confirm-message="Delete &quot;{{ t.name|escapejs }}&quot;? This cannot be undone."
+                          title="Delete">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            {# Parameters / Components panel #}
+            <tr class="components-row hidden" id="components-{{ t.pk }}">
+              <td colspan="5" class="px-5 pb-4 pt-1">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 rounded-xl p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16"/></svg>
+                    <p class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Parameters — {{ t.name }}</p>
+                  </div>
+
+                  {% if t.parameters.all %}
+                  <div class="rounded-lg border border-slate-200 bg-white overflow-hidden mb-3">
+                    <table class="w-full text-xs">
+                      <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th class="text-left px-4 py-2 font-semibold text-slate-500 uppercase tracking-wide">Parameter</th>
+                          <th class="text-left px-3 py-2 font-semibold text-slate-500 uppercase tracking-wide">Unit</th>
+                          <th class="text-left px-3 py-2 font-semibold text-slate-500 uppercase tracking-wide">Reference Range</th>
+                          <th class="text-right px-4 py-2 font-semibold text-slate-500 uppercase tracking-wide">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        {% for p in t.parameters.all %}
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="px-4 py-2 font-medium text-slate-700">{{ p.name }}</td>
+                          <td class="px-3 py-2 text-slate-500">{{ p.unit|default:"—" }}</td>
+                          <td class="px-3 py-2 text-slate-500">{{ p.reference_range|default:"—" }}</td>
+                          <td class="px-4 py-2 text-right">
+                            <form id="param-del-{{ p.pk }}" method="post" action="{% url 'lab_test_parameter_delete' pk=p.pk %}" class="inline">
+                              {% csrf_token %}
+                            </form>
+                            <button type="button"
+                                    class="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 hover:underline"
+                                    data-confirm-form="param-del-{{ p.pk }}"
+                                    data-confirm-title="Remove Parameter"
+                                    data-confirm-message="Remove &quot;{{ p.name|escapejs }}&quot; from {{ t.name }}?">
+                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <div class="flex items-center gap-2 text-xs text-slate-400 mb-3 bg-white rounded-lg border border-dashed border-slate-200 px-4 py-3">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    No parameters yet — add them below. For a panel test (e.g. Full Blood Count), each measurable component is a parameter.
+                  </div>
+                  {% endif %}
+
+                  {# Add parameter form #}
+                  <form method="post" action="{% url 'lab_test_parameter_create' test_pk=t.pk %}" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    {% csrf_token %}
+                    <input name="name" required class="form-input text-xs py-2" placeholder="e.g. Hemoglobin" />
+                    <input name="unit" class="form-input text-xs py-2" placeholder="Unit (e.g. g/dL)" />
+                    <input name="reference_range" class="form-input text-xs py-2" placeholder="Ref. range (e.g. 12–16)" />
+                    <button class="btn-secondary text-xs py-2 justify-center">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                      Add Parameter
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="px-5 py-8 text-center">
+        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <p class="text-sm text-slate-500">No tests in this category yet.</p>
+        <p class="text-xs text-slate-400 mt-1">Use the form above to add one.</p>
+      </div>
+      {% endif %}
+    </div>
+  </details>
+
+  {% empty %}
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm px-8 py-14 text-center">
+    <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+    </div>
+    <p class="text-slate-600 font-medium">No categories yet</p>
+    <p class="text-sm text-slate-400 mt-1">Add a category above to get started.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  /* ── Stats ──────────────────────────────────────────────── */
+  const allRows    = document.querySelectorAll('.test-row');
+  const activeRows = [...allRows].filter(r => r.querySelector('.badge-green'));
+  const pricedRows = [...allRows].filter(r => r.querySelector('span.font-mono.font-semibold'));
+  document.getElementById('stat-total').textContent  = allRows.length;
+  document.getElementById('stat-active').textContent = activeRows.length;
+  document.getElementById('stat-priced').textContent = pricedRows.length;
+
+  /* ── Chevron on open/close ───────────────────────────────── */
+  document.querySelectorAll('.cat-card').forEach(card => {
+    card.addEventListener('toggle', () => {
+      const ch = card.querySelector('.chevron');
+      if (ch) ch.style.transform = card.open ? 'rotate(90deg)' : '';
+    });
+  });
+
+  /* ── Parameter panel toggle ─────────────────────────────── */
+  document.querySelectorAll('.components-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = document.getElementById(btn.dataset.target);
+      if (row) row.classList.toggle('hidden');
+    });
+  });
+
+  /* ── Expand / Collapse all ──────────────────────────────── */
+  const catCards = document.querySelectorAll('.cat-card');
+  document.getElementById('expand-all').addEventListener('click',   () => catCards.forEach(c => c.open = true));
+  document.getElementById('collapse-all').addEventListener('click', () => catCards.forEach(c => c.open = false));
+
+  /* ── Search ──────────────────────────────────────────────── */
+  const searchInput  = document.getElementById('catalog-search');
+  const clearBtn     = document.getElementById('clear-search');
+  const summaryEl    = document.getElementById('search-summary');
+
+  function norm(s) { return (s || '').toLowerCase(); }
+
+  function runSearch() {
+    const q = norm(searchInput.value.trim());
+    clearBtn.classList.toggle('hidden', !q);
+    let total = 0;
+
+    catCards.forEach(cat => {
+      const rows = cat.querySelectorAll('.test-row');
+      let catMatch = false;
+
+      if (!q) {
+        rows.forEach(r => r.classList.remove('hidden'));
+        cat.querySelectorAll('.components-row').forEach(r => r.classList.add('hidden'));
+        cat.classList.remove('hidden');
+        cat.open = false;
+        return;
+      }
+
+      rows.forEach(row => {
+        const match = norm(row.dataset.testName).includes(q) ||
+                      norm(row.dataset.params).includes(q);
+        row.classList.toggle('hidden', !match);
+        if (row.nextElementSibling?.classList.contains('components-row'))
+          row.nextElementSibling.classList.add('hidden');
+        if (match) { catMatch = true; total++; }
+      });
+
+      if (norm(cat.dataset.catName).includes(q)) {
+        rows.forEach(r => { r.classList.remove('hidden'); catMatch = true; total++; });
+      }
+
+      cat.classList.toggle('hidden', !catMatch);
+      cat.open = catMatch;
+    });
+
+    summaryEl.textContent = q ? `${total} test${total === 1 ? '' : 's'} found` : '';
+  }
+
+  searchInput.addEventListener('input', runSearch);
+  clearBtn.addEventListener('click', () => { searchInput.value = ''; runSearch(); searchInput.focus(); });
+})();
+</script>
+{% endblock %}

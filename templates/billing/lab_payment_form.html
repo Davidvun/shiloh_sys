@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Bill Lab Test{% endblock %}
+{% block page_title %}Bill Lab Test{% endblock %}
+{% block page_subtitle %}{{ visit.patient.full_name }} — {{ visit.patient.patient_id }}{% endblock %}
+{% block content %}
+<div class="max-w-lg space-y-4">
+
+  <!-- Lab test info card -->
+  <div class="card bg-blue-50 border-blue-200">
+    <p class="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-3">Lab Test Details</p>
+    <div class="grid grid-cols-2 gap-2 text-sm">
+      <div><span class="text-slate-500">Test</span><div class="font-semibold text-slate-800">{{ lab.test_name }}</div></div>
+      <div><span class="text-slate-500">Category</span><div class="font-medium text-slate-700">{% if lab.lab_test %}{{ lab.lab_test.category.name }}{% else %}Custom{% endif %}</div></div>
+      <div><span class="text-slate-500">Urgency</span><div><span class="badge {% if lab.urgency == 'stat' %}badge-red{% elif lab.urgency == 'urgent' %}badge-yellow{% else %}badge-gray{% endif %}">{{ lab.get_urgency_display }}</span></div></div>
+      <div><span class="text-slate-500">Requested by</span><div class="font-medium text-slate-700">Dr. {{ lab.requested_by.get_full_name }}</div></div>
+    </div>
+  </div>
+
+  <!-- Charge summary -->
+  <div class="card bg-emerald-50 border-emerald-200">
+    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">Charge Summary</p>
+    <div class="space-y-1.5 text-sm">
+      <div class="flex justify-between"><span class="text-slate-600">Lab Fee</span><span id="summary-total" class="font-mono font-medium text-slate-800">{{ default_price|floatformat:-2 }} {{ currency }}</span></div>
+      {% if visit.patient.insurance %}
+      <div class="flex justify-between"><span class="text-slate-600">Insurance covers ({{ visit.patient.insurance.name }})</span><span id="summary-insurance" class="font-mono text-blue-600">—</span></div>
+      {% endif %}
+      <div class="flex justify-between border-t border-emerald-200 pt-2 mt-1">
+        <span class="font-semibold text-slate-700">Patient Pays</span>
+        <span id="summary-patient-pays" class="font-mono font-bold text-emerald-700 text-base">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label class="form-label">Lab Fee <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">{{ currency }}</span>
+          <input type="number" name="total_amount" id="total-amount" min="0" step="0.01"
+                 value="{{ default_price }}" required class="form-input pl-14" />
+        </div>
+        {% if default_price == 0 %}<p class="text-xs text-slate-400 mt-1">No default price set — enter the amount manually.</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="form-label">Payment Method</label>
+        <select name="payment_method" required class="form-input">
+          {% for val, label in payment_methods %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Amount Received <span class="text-slate-400 font-normal">({{ currency }})</span></label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">{{ currency }}</span>
+          <input type="number" name="amount_paid" id="amount-paid" min="0" step="0.01"
+                 class="form-input pl-14" placeholder="0.00" />
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Auto-filled with the patient's share. Edit if actual amount differs.</p>
+      </div>
+
+      <div>
+        <button type="button" id="show-notes-btn" class="text-slate-400 hover:text-slate-600 underline underline-offset-2 text-xs">+ Add notes</button>
+        <div id="notes-row" class="hidden mt-2">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-input" rows="2" placeholder="Optional…"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="btn-primary">Confirm Payment</button>
+        <a href="{% url 'lab_billing_list' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const insurancePct = {{ visit.patient.insurance.coverage_percentage|default:0 }};
+  const currency = "{{ currency }}";
+  const totalInput   = document.getElementById('total-amount');
+  const amountPaidEl = document.getElementById('amount-paid');
+  const summaryTotal   = document.getElementById('summary-total');
+  const summaryIns     = document.getElementById('summary-insurance');
+  const summaryPays    = document.getElementById('summary-patient-pays');
+
+  function fmt(n) { return new Intl.NumberFormat(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}).format(n) + ' ' + currency; }
+
+  function recalc() {
+    const total = parseFloat(totalInput.value) || 0;
+    const patientPays   = total * ((100 - insurancePct) / 100);
+    const insurancePays = total - patientPays;
+    if (summaryTotal) summaryTotal.textContent = fmt(total);
+    if (summaryIns)   summaryIns.textContent   = fmt(insurancePays);
+    if (summaryPays)  summaryPays.textContent  = fmt(patientPays);
+    amountPaidEl.value = (Math.round(patientPays * 100) / 100) || '';
+  }
+
+  totalInput.addEventListener('input', recalc);
+  recalc();
+
+  document.getElementById('show-notes-btn').addEventListener('click', function () {
+    document.getElementById('notes-row').classList.remove('hidden');
+    this.classList.add('hidden');
+  });
+</script>
+{% endblock %}
